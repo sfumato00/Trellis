@@ -1,0 +1,999 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trellis Contributor Map</title>
+<style>
+/* Layout: sticky top bar; "you are here" rail on the left (>=1100px) or a chip strip (<1100px);
+   one ~900px reading column; every section = layer eyebrow + one-sentence claim + one figure + folded detail.
+   Color carries the layer everywhere: warn = problem, accent = Trellis mechanism, arch = repo internals. */
+:root{
+  --bg:#f5f7f2; --surface:#ffffff; --sunk:#ecf0e8; --fg:#17221d; --muted:#56665d; --line:#d3dbcf;
+  --accent:#1e7552; --accent-soft:#dcefe4; --warn:#a94c16; --warn-soft:#f7e4d6; --arch:#3d5d88; --arch-soft:#e1e9f3;
+  --c1:#1e7552; --c2:#6aaa8b; --c3:#3d5d88; --c4:#9aa5a0; --c5:#c99a2e;
+  --lattice:rgba(30,117,82,.08); --bar-bg:rgba(245,247,242,.9);
+  --display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --bar-h:56px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1512; --surface:#16201b; --sunk:#1c2722; --fg:#dde7e1; --muted:#98a89f; --line:#2b3a32;
+    --accent:#5ec597; --accent-soft:#173a2b; --warn:#ef9d60; --warn-soft:#3b2517; --arch:#93b2e3; --arch-soft:#1b2739;
+    --c1:#5ec597; --c2:#2e8560; --c3:#93b2e3; --c4:#5d6a64; --c5:#d8b257;
+    --lattice:rgba(94,197,151,.07); --bar-bg:rgba(15,21,18,.88); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1512; --surface:#16201b; --sunk:#1c2722; --fg:#dde7e1; --muted:#98a89f; --line:#2b3a32;
+  --accent:#5ec597; --accent-soft:#173a2b; --warn:#ef9d60; --warn-soft:#3b2517; --arch:#93b2e3; --arch-soft:#1b2739;
+  --c1:#5ec597; --c2:#2e8560; --c3:#93b2e3; --c4:#5d6a64; --c5:#d8b257;
+  --lattice:rgba(94,197,151,.07); --bar-bg:rgba(15,21,18,.88); color-scheme:dark;
+}
+
+/* language switch: both languages live in the markup, CSS shows one */
+:root:not([data-lang="zh"]) [lang="zh"]{display:none}
+:root[data-lang="zh"] [lang="en"]{display:none}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0;-webkit-text-size-adjust:100%}
+table{font:inherit}
+a{color:var(--accent)}
+code,.code{font-family:var(--mono);font-size:.88em}
+main code{overflow-wrap:anywhere}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;height:var(--bar-h);background:var(--bg);background:var(--bar-bg);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1180px;height:100%;margin:0 auto;padding-inline:16px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font:650 15px/1 var(--display);letter-spacing:.01em;color:var(--fg);text-decoration:none;min-width:0}
+.brand svg{width:22px;height:22px;color:var(--accent);flex:none}
+.brand small{font:500 12px/1 var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-sp{flex:1}
+.btn{font:600 13px/1 var(--body);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;
+  padding:8px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+#theme-btn [data-m]{display:none}
+#theme-btn[data-mode="auto"] [data-m="auto"],#theme-btn[data-mode="light"] [data-m="light"],#theme-btn[data-mode="dark"] [data-m="dark"]{display:inline}
+
+/* page grid */
+.page{max-width:1180px;margin:0 auto;padding-inline:16px;display:grid;grid-template-columns:minmax(0,1fr)}
+main{min-width:0;max-width:900px}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--bar-h));z-index:10;background:var(--bg);
+  margin-inline:-16px;padding:8px 16px;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.rail .grp{display:none}
+.rail a{flex:none;display:inline-flex;align-items:center;gap:6px;font:500 13px/1 var(--body);color:var(--muted);text-decoration:none;
+  padding:7px 10px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+.rail a::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--layer,var(--muted));flex:none}
+.rail a.on{color:var(--fg);border-color:var(--line);background:var(--surface)}
+@media (min-width:1100px){
+  .page{grid-template-columns:200px minmax(0,1fr);gap:56px}
+  .rail{top:calc(env(safe-area-inset-top,0px) + var(--bar-h) + 24px);align-self:start;margin:24px 0 0;padding:0;border:0;
+    flex-direction:column;gap:2px;overflow:visible;background:none}
+  .rail .grp{display:block;font:600 11px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px 10px}
+  .rail .grp:first-child{margin-top:0}
+  .rail a{border-radius:8px;padding:8px 10px}
+  .rail .here{display:block;font:500 12px/1.4 var(--body);color:var(--muted);margin:18px 10px 0}
+}
+.rail .here{display:none}
+@media (min-width:1100px){.rail .here{display:block}}
+
+[data-layer="problem"]{--layer:var(--warn)}
+[data-layer="solution"]{--layer:var(--accent)}
+[data-layer="arch"]{--layer:var(--arch)}
+[data-layer="overview"],[data-layer="ref"]{--layer:var(--fg)}
+
+/* hero */
+.hero{position:relative;padding-block:56px 40px}
+.hero::before{content:"";position:absolute;inset:0 -16px;z-index:-1;pointer-events:none;
+  background:
+    repeating-linear-gradient(45deg,var(--lattice) 0 1px,transparent 1px 28px),
+    repeating-linear-gradient(-45deg,var(--lattice) 0 1px,transparent 1px 28px);
+  -webkit-mask-image:linear-gradient(to bottom,#000 30%,transparent);mask-image:linear-gradient(to bottom,#000 30%,transparent)}
+.kicker{font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(2rem,1.3rem + 2.8vw,3.3rem)/1.08 var(--display);letter-spacing:-.02em;margin:14px 0 18px;text-wrap:balance;max-width:20ch}
+:root[data-lang="zh"] h1{letter-spacing:0;max-width:16em}
+.lede{font-size:1.125rem;max-width:62ch;margin:0;color:var(--fg)}
+.layers{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.layer-chip{display:inline-flex;align-items:center;gap:8px;font:600 13px/1 var(--body);padding:7px 11px 7px 9px;border-radius:999px;
+  background:var(--surface);border:1px solid var(--line)}
+.layer-chip i{width:10px;height:10px;border-radius:3px;background:var(--layer)}
+
+/* legend */
+.legend{margin-top:34px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px}
+.legend h2{font:650 15px/1.3 var(--display);margin:0 0 4px}
+.legend p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.legend ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
+@media (min-width:720px){.legend ul{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.legend li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:2px 10px;align-items:start;align-content:start;font-size:14px;line-height:1.35}
+.legend li svg{width:24px;height:24px;grid-row:span 2}
+.legend b{font-weight:650}
+.legend li span.d2{color:var(--muted);font-size:13px}
+
+/* sections */
+section{padding-block:56px 48px;border-top:1px solid var(--line);scroll-margin-top:calc(var(--bar-h) + 52px)}
+@media (min-width:1100px){section{scroll-margin-top:calc(var(--bar-h) + 8px)}}
+.eyebrow{display:flex;align-items:center;gap:8px;font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--layer)}
+.eyebrow::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--layer)}
+h2.claim{font:680 clamp(1.35rem,1.05rem + 1.3vw,1.95rem)/1.25 var(--display);letter-spacing:-.01em;margin:12px 0 10px;text-wrap:balance;max-width:34ch}
+:root[data-lang="zh"] h2.claim{letter-spacing:0;max-width:24em}
+.why{margin:0;max-width:66ch;color:var(--muted)}
+figure{margin:24px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 18px 14px}
+.fig-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fig-scroll>svg{display:block;width:100%;height:auto}
+.scroll-hint{display:none;font:500 12px/1 var(--body);color:var(--muted);margin:0 0 8px}
+@media (max-width:760px){
+  .fig-scroll>svg{min-width:720px}
+  .scroll-hint{display:block}
+}
+figcaption{font-size:14px;color:var(--muted);margin-top:12px;max-width:72ch}
+details{margin-top:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+summary{cursor:pointer;padding:11px 14px;font:600 14px/1.3 var(--body);list-style-position:inside}
+details>div{padding:0 16px 14px;font-size:14.5px}
+details ul{margin:0;padding-left:1.2em}
+details li{margin:4px 0}
+.src{font-size:13px;color:var(--muted)}
+
+/* svg diagrams (colors come from tokens so both themes work) */
+.d{font-family:var(--body)}
+.d text{font-size:13px;fill:var(--fg)}
+.d .t-s{font-size:11.5px;fill:var(--muted)}
+.d .t-h{font-size:14px;font-weight:650}
+.d .t-c{font-family:var(--mono);font-size:12px}
+.d .t-acc{fill:var(--accent)} .d .t-warn{fill:var(--warn)} .d .t-arch{fill:var(--arch)}
+.d .box{fill:var(--surface);stroke:var(--line);stroke-width:1.25}
+.d .box-sunk{fill:var(--sunk);stroke:var(--line);stroke-width:1.25}
+.d .box-acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.25}
+.d .box-warn{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.25}
+.d .box-arch{fill:var(--arch-soft);stroke:var(--arch);stroke-width:1.25}
+.d .box-x{fill:none;stroke:var(--warn);stroke-width:1.25;stroke-dasharray:4 4}
+.d .e{fill:none;stroke:var(--muted);stroke-width:1.5;marker-end:url(#m-muted)}
+.d .e-acc{fill:none;stroke:var(--accent);stroke-width:1.6;marker-end:url(#m-acc)}
+.d .e-warn{fill:none;stroke:var(--warn);stroke-width:1.5;stroke-dasharray:5 4;marker-end:url(#m-warn)}
+.d .e-twin{fill:none;stroke:var(--arch);stroke-width:1.5;stroke-dasharray:2 4;marker-start:url(#m-arch);marker-end:url(#m-arch)}
+.d .axis{stroke:var(--muted);stroke-width:1.25}
+.d .guide{stroke:var(--line);stroke-width:1.25;stroke-dasharray:3 4}
+.d .ln-warn{fill:none;stroke:var(--warn);stroke-width:2.2;stroke-dasharray:7 5;stroke-linejoin:round}
+.d .ln-acc{fill:none;stroke:var(--accent);stroke-width:2.8;stroke-linejoin:round}
+.d .dot{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.d .ring{fill:var(--surface);stroke:var(--accent);stroke-width:1.5}
+.ic{color:var(--fg)} .ic-acc{color:var(--accent)} .ic-warn{color:var(--warn)} .ic-arch{color:var(--arch)} .ic-muted{color:var(--muted)}
+.mk-muted{fill:var(--muted)} .mk-acc{fill:var(--accent)} .mk-warn{fill:var(--warn)} .mk-arch{fill:var(--arch)}
+.seg1{fill:var(--c1)} .seg2{fill:var(--c2)} .seg3{fill:var(--c3)} .seg4{fill:var(--c4)} .seg5{fill:var(--c5)}
+.d .unit{stroke:var(--surface);stroke-width:2}
+
+/* mapping interaction */
+.mp-node{cursor:pointer;outline:none}
+.mp-node:focus-visible rect{stroke-width:2.5}
+.mp-edge,.mp-node{transition:opacity .15s}
+.dim .mp-edge:not(.on){opacity:.1}
+.dim .mp-node:not(.on){opacity:.32}
+@media (prefers-reduced-motion:reduce){.mp-edge,.mp-node{transition:none}}
+
+/* problem cards */
+.cards{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:20px}
+@media (min-width:560px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;
+  grid-template-columns:30px minmax(0,1fr);gap:4px 12px;align-content:start}
+.card>svg{width:26px;height:26px;color:var(--warn);grid-row:span 3}
+.card h3{font:650 15.5px/1.3 var(--display);margin:2px 0 0}
+.card p{margin:0;font-size:14.5px;line-height:1.5;color:var(--muted)}
+.fix{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.fix b{font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 9px}
+
+/* platform classes */
+.classes{display:grid;gap:10px;margin-top:16px}
+.cls{display:grid;grid-template-columns:44px minmax(0,1fr);gap:2px 14px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.cls .n{grid-row:span 3;font:700 22px/1 var(--display);display:flex;align-items:center;gap:8px;padding-top:2px}
+.cls .n i{width:10px;height:26px;border-radius:3px;flex:none}
+.cls h3{font:650 15px/1.3 var(--display);margin:0}
+.cls p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+.cls .pl{font-size:13.5px;color:var(--fg)}
+
+/* do / don't */
+.rules{display:grid;gap:10px;margin-top:16px}
+.rule{display:grid;grid-template-columns:26px minmax(0,1fr);gap:12px;align-items:start;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:14.5px;line-height:1.55}
+.rule svg{width:22px;height:22px;margin-top:1px}
+.rule.do{border-color:var(--accent)} .rule.do svg{color:var(--accent)}
+.rule.dont{border-color:var(--warn)} .rule.dont svg{color:var(--warn)}
+.rule.twin svg{color:var(--arch)}
+
+/* cheat sheet */
+.cheat{display:grid;gap:0;margin-top:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.row{display:grid;grid-template-columns:26px minmax(0,1fr);gap:4px 14px;padding:13px 16px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row>svg{width:22px;height:22px;color:var(--accent);grid-row:span 3;margin-top:1px}
+.row .q{font-weight:650;line-height:1.4}
+.row .a{font-size:14.5px;line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.row .s{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+@media (min-width:760px){
+  .row{grid-template-columns:26px minmax(0,.8fr) minmax(0,1.3fr) minmax(0,.9fr);align-items:start}
+  .row>svg{grid-row:auto}
+}
+
+footer{border-top:1px solid var(--line);padding-block:28px 48px;font-size:13px;color:var(--muted)}
+</style>
+
+<!-- Icon vocabulary + arrow markers. Defined once; everything else references them with <use>. -->
+<svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <marker id="m-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-muted" d="M0 0 10 5 0 10z"/></marker>
+    <marker id="m-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-acc" d="M0 0 10 5 0 10z"/></marker>
+    <marker id="m-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-warn" d="M0 0 10 5 0 10z"/></marker>
+    <marker id="m-arch" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-arch" d="M0 0 10 5 0 10z"/></marker>
+  </defs>
+  <symbol id="i-spec" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15H7.5A2.5 2.5 0 0 0 5 20.5z"/><path d="M5 20.5A2.5 2.5 0 0 1 7.5 18H19v3H7.5"/><path d="M9 7.5h6M9 11h4"/></g></symbol>
+  <symbol id="i-task" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2.5" width="6" height="3.5" rx="1"/><path d="m9 13.5 2 2 4-4.5"/></g></symbol>
+  <symbol id="i-journal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18"/><path d="M12.5 8h3.5M12.5 12h3.5M12.5 16h2"/></g></symbol>
+  <symbol id="i-hook" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v4"/></g></symbol>
+  <symbol id="i-agent" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="11.5" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><circle cx="9.3" cy="13.5" r="1.2"/><circle cx="14.7" cy="13.5" r="1.2"/><path d="M2.5 13v2.5M21.5 13v2.5"/></g></symbol>
+  <symbol id="i-platform" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M6.5 6.5h.01M9.5 6.5h.01"/><path d="m8 13 2.5 2L8 17M13 17h3"/></g></symbol>
+  <symbol id="i-template" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/></g></symbol>
+  <symbol id="i-repo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="9" cy="13.5" r="1.4"/><circle cx="15" cy="13.5" r="1.4"/><path d="M10.4 13.5h3.2"/></g></symbol>
+  <symbol id="i-update" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 21v-5h-5"/></g></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2h.01"/></g></symbol>
+  <symbol id="i-dev" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.2A5 5 0 0 1 21 19.5"/></g></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20.5 20.5-4.8-4.8"/><path d="M8.5 11h5"/></g></symbol>
+  <symbol id="i-lattice" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 20 4M4 12l8-8M12 20l8-8M4 4l16 16M12 4l8 8M4 12l8 8"/></g></symbol>
+</svg>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand" href="#top" aria-label="Trellis">
+      <svg aria-hidden="true"><use href="#i-lattice"/></svg>
+      <span data-neutral>Trellis</span>
+      <small><span lang="en">contributor map</span><span lang="zh">贡献者地图</span></small>
+    </a>
+    <span class="bar-sp"></span>
+    <button class="btn" id="theme-btn" type="button" data-mode="auto" aria-label="Theme">
+      <span data-m="auto"><span lang="en">Auto</span><span lang="zh">自动</span></span>
+      <span data-m="light"><span lang="en">Light</span><span lang="zh">浅色</span></span>
+      <span data-m="dark"><span lang="en">Dark</span><span lang="zh">深色</span></span>
+    </button>
+    <button class="btn" id="lang-btn" type="button" aria-label="Switch language / 切换语言"><span lang="en">中文</span><span lang="zh">EN</span></button>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="rail" aria-label="Sections">
+    <span class="grp"><span lang="en">Overview</span><span lang="zh">总览</span></span>
+    <a href="#map" data-layer="overview"><span lang="en">The big picture</span><span lang="zh">全景</span></a>
+    <span class="grp"><span lang="en">Problem</span><span lang="zh">问题</span></span>
+    <a href="#problem" data-layer="problem"><span lang="en">Agents forget</span><span lang="zh">智能体会遗忘</span></a>
+    <span class="grp"><span lang="en">Solution</span><span lang="zh">解法</span></span>
+    <a href="#mapping" data-layer="solution"><span lang="en">Problem → mechanism</span><span lang="zh">问题 → 机制</span></a>
+    <a href="#workflow" data-layer="solution"><span lang="en">Task workflow</span><span lang="zh">任务工作流</span></a>
+    <a href="#injection" data-layer="solution"><span lang="en">Context injection</span><span lang="zh">上下文注入</span></a>
+    <span class="grp"><span lang="en">Architecture</span><span lang="zh">架构</span></span>
+    <a href="#repo" data-layer="arch"><span lang="en">core and cli</span><span lang="zh">core 与 cli</span></a>
+    <a href="#distribute" data-layer="arch"><span lang="en">Templates → repos</span><span lang="zh">模板 → 仓库</span></a>
+    <a href="#update" data-layer="arch"><span lang="en">Update &amp; migrations</span><span lang="zh">更新与迁移</span></a>
+    <span class="grp"><span lang="en">Reference</span><span lang="zh">速查</span></span>
+    <a href="#cheatsheet" data-layer="ref"><span lang="en">Where do I edit?</span><span lang="zh">该改哪里？</span></a>
+    <span class="here"><span lang="en">The highlighted item is the section you are reading.</span><span lang="zh">高亮项就是你正在读的章节。</span></span>
+  </nav>
+
+  <main id="top">
+    <!-- ============ HERO ============ -->
+    <div class="hero">
+      <div class="kicker"><span lang="en">For new contributors</span><span lang="zh">写给新贡献者</span> · <span data-neutral>v0.6.17</span></div>
+      <h1><span lang="en">Why Trellis exists, and how it is built</span><span lang="zh">Trellis 为什么存在，又是怎么搭起来的</span></h1>
+      <p class="lede"><span lang="en">AI coding agents forget. Each session starts cold, long chats get compacted, and every tool wants its own setup. Trellis keeps a project's rules, plans and memory in files inside the repo, and hands the right slice of them to 22 AI tools at the right moment.</span><span lang="zh">AI 编码智能体会遗忘：每次会话都从零开始，长对话会被压缩，每种工具还各要一套配置。Trellis 把项目的规范、计划和记忆存成仓库里的文件，并在合适的时机，把合适的那一部分交给 22 种 AI 工具。</span></p>
+      <div class="layers">
+        <span class="layer-chip" data-layer="problem"><i></i><span lang="en">Problem</span><span lang="zh">问题</span></span>
+        <span class="layer-chip" data-layer="solution"><i></i><span lang="en">Trellis mechanism</span><span lang="zh">Trellis 机制</span></span>
+        <span class="layer-chip" data-layer="arch"><i></i><span lang="en">Repo internals</span><span lang="zh">仓库内部</span></span>
+      </div>
+
+      <div class="legend" id="legend">
+        <h2><span lang="en">Icon vocabulary</span><span lang="zh">图标词汇表</span></h2>
+        <p><span lang="en">Twelve icons, used the same way in every diagram below. The color tells you the layer.</span><span lang="zh">下面所有图都用这 12 个图标，含义不变。颜色表示所属层次。</span></p>
+        <ul>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-spec"/></svg><b><span lang="en">Spec</span><span lang="zh">规范</span></b><span class="d2"><span lang="en">rules in <code>.trellis/spec/</code></span><span lang="zh">写在 <code>.trellis/spec/</code> 里的规则</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-task"/></svg><b><span lang="en">Task</span><span lang="zh">任务</span></b><span class="d2"><span lang="en">a task dir: PRD, plan, context</span><span lang="zh">任务目录：PRD、计划、上下文</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-journal"/></svg><b><span lang="en">Journal</span><span lang="zh">日志</span></b><span class="d2"><span lang="en">per-developer session memory</span><span lang="zh">每位开发者的会话记忆</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-hook"/></svg><b><span lang="en">Hook</span><span lang="zh">Hook</span></b><span class="d2"><span lang="en">a script the AI tool runs at a set moment</span><span lang="zh">AI 工具在固定时机运行的脚本</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-agent"/></svg><b><span lang="en">Agent</span><span lang="zh">智能体</span></b><span class="d2"><span lang="en">the AI, or a sub-agent it spawns</span><span lang="zh">AI 本身，或它派生的子智能体</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-platform"/></svg><b><span lang="en">AI tool</span><span lang="zh">AI 工具</span></b><span class="d2"><span lang="en">one of the 22 supported hosts</span><span lang="zh">22 种受支持的宿主之一</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-template"/></svg><b><span lang="en">Template</span><span lang="zh">模板</span></b><span class="d2"><span lang="en">source files the CLI ships</span><span lang="zh">CLI 分发出去的源文件</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><b><span lang="en">Repo</span><span lang="zh">仓库</span></b><span class="d2"><span lang="en">a project with Trellis installed</span><span lang="zh">安装了 Trellis 的项目</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-update"/></svg><b><span lang="en">Update</span><span lang="zh">更新</span></b><span class="d2"><span lang="en">upgrade plus migrations</span><span lang="zh">升级与迁移</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-warn"/></svg><b><span lang="en">Problem</span><span lang="zh">问题</span></b><span class="d2"><span lang="en">what goes wrong, or what not to do</span><span lang="zh">会出的问题，或不该做的事</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-dev"/></svg><b><span lang="en">People</span><span lang="zh">人</span></b><span class="d2"><span lang="en">you and your team</span><span lang="zh">你和你的团队</span></span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><b><span lang="en">Recall</span><span lang="zh">回溯</span></b><span class="d2"><span lang="en"><code>tl mem</code> and spec lookup</span><span lang="zh"><code>tl mem</code> 与查找规范</span></span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ============ 1 MAP ============ -->
+    <section id="map" data-layer="overview">
+      <div class="eyebrow"><span lang="en">Overview</span><span lang="zh">总览</span></div>
+      <h2 class="claim"><span lang="en">Trellis is a layer of files between your repo and the AI tool, plus the hooks that carry them across</span><span lang="zh">Trellis 是仓库与 AI 工具之间的一层文件，外加把这些文件送过去的 hook</span></h2>
+      <p class="why"><span lang="en">Keep this picture in mind. Every later section zooms into one part of it.</span><span lang="zh">记住这张图，后面每一节都只放大其中一块。</span></p>
+      <figure>
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 -14 880 334" role="img" aria-label="Overview: trellis init installs both the .trellis folder and the AI tool's hooks; you commit rules into .trellis; hooks inject them into the agent every session and turn; the agent writes PRDs, journals and new rules back.">
+          <!-- CLI installs both sides -->
+          <rect class="box" x="20" y="24" width="170" height="64" rx="10"/>
+          <use href="#i-template" class="ic-arch" x="34" y="36" width="22" height="22"/>
+          <text x="64" y="52" class="t-c" data-neutral>trellis init</text>
+          <text x="34" y="78" class="t-s"><tspan lang="en">installs both sides</tspan><tspan lang="zh">两边都由它安装</tspan></text>
+          <path class="e" d="M190 56 H254"/>
+          <path class="e" d="M105 24 V6 H770 V54"/>
+          <text x="560" y="0" class="t-s"><tspan lang="en">writes hook config</tspan><tspan lang="zh">写入 hook 配置</tspan></text>
+
+          <!-- you and team -->
+          <rect class="box" x="20" y="120" width="170" height="84" rx="10"/>
+          <use href="#i-dev" class="ic" x="34" y="134" width="24" height="24"/>
+          <text x="66" y="151" class="t-h"><tspan lang="en">You &amp; team</tspan><tspan lang="zh">你和团队</tspan></text>
+          <text x="34" y="186" class="t-s"><tspan lang="en">write each rule once</tspan><tspan lang="zh">每条规则只写一次</tspan></text>
+          <path class="e" d="M190 162 H254"/>
+          <text x="222" y="152" class="t-s" text-anchor="middle"><tspan lang="en">commit</tspan><tspan lang="zh">提交</tspan></text>
+
+          <!-- .trellis panel -->
+          <rect class="box-sunk" x="258" y="24" width="270" height="246" rx="12"/>
+          <text x="274" y="50" class="t-c t-h" data-neutral>.trellis/</text>
+          <text x="512" y="50" class="t-s" text-anchor="end"><tspan lang="en">in your repo</tspan><tspan lang="zh">在你的仓库里</tspan></text>
+          <rect class="box" x="274" y="66" width="238" height="52" rx="8"/>
+          <use href="#i-spec" class="ic-acc" x="286" y="80" width="24" height="24"/>
+          <text x="322" y="88" class="t-c" data-neutral>spec/</text>
+          <text x="322" y="106" class="t-s"><tspan lang="en">conventions per package</tspan><tspan lang="zh">按包划分的规范</tspan></text>
+          <rect class="box" x="274" y="128" width="238" height="52" rx="8"/>
+          <use href="#i-task" class="ic-acc" x="286" y="142" width="24" height="24"/>
+          <text x="322" y="150" class="t-c" data-neutral>tasks/</text>
+          <text x="322" y="168" class="t-s"><tspan lang="en">PRD · design · context lists</tspan><tspan lang="zh">PRD · 设计 · 上下文清单</tspan></text>
+          <rect class="box" x="274" y="190" width="238" height="52" rx="8"/>
+          <use href="#i-journal" class="ic-acc" x="286" y="204" width="24" height="24"/>
+          <text x="322" y="212" class="t-c" data-neutral>workspace/</text>
+          <text x="322" y="230" class="t-s"><tspan lang="en">journals, one per developer</tspan><tspan lang="zh">日志，每位开发者一份</tspan></text>
+
+          <!-- hooks -->
+          <path class="e-acc" d="M528 147 H584"/>
+          <circle class="ring" cx="604" cy="147" r="19"/>
+          <use href="#i-hook" class="ic-acc" x="592" y="135" width="24" height="24"/>
+          <path class="e-acc" d="M623 147 H678"/>
+          <text x="604" y="114" class="t-s t-acc" text-anchor="middle"><tspan lang="en">hooks inject</tspan><tspan lang="zh">hook 注入</tspan></text>
+          <text x="604" y="188" class="t-s" text-anchor="middle"><tspan lang="en">every session</tspan><tspan lang="zh">每次会话</tspan></text>
+          <text x="604" y="204" class="t-s" text-anchor="middle"><tspan lang="en">and every turn</tspan><tspan lang="zh">每轮对话</tspan></text>
+
+          <!-- AI tool -->
+          <rect class="box" x="680" y="56" width="180" height="182" rx="12"/>
+          <use href="#i-platform" class="ic" x="694" y="70" width="24" height="24"/>
+          <text x="726" y="87" class="t-h"><tspan lang="en">AI tool</tspan><tspan lang="zh">AI 工具</tspan></text>
+          <text x="694" y="116" class="t-s"><tspan lang="en">22 supported</tspan><tspan lang="zh">支持 22 种</tspan></text>
+          <rect class="box-sunk" x="694" y="130" width="152" height="94" rx="8"/>
+          <use href="#i-agent" class="ic-acc" x="706" y="142" width="24" height="24"/>
+          <text x="738" y="159" class="t-h"><tspan lang="en">agent</tspan><tspan lang="zh">智能体</tspan></text>
+          <text x="706" y="194" class="t-s" data-neutral>Claude Code, Cursor,</text>
+          <text x="706" y="210" class="t-s" data-neutral>Codex, Gemini, Pi …</text>
+
+          <!-- write back -->
+          <path class="e-acc" d="M770 238 V292 H393 V274"/>
+          <text x="582" y="284" class="t-s t-acc" text-anchor="middle"><tspan lang="en">writes back: PRD, journal, new rules</tspan><tspan lang="zh">回写：PRD、日志、新规则</tspan></text>
+        </svg>
+        </div>
+        <figcaption><span lang="en">The agent never has to "remember" the project. It is told, from files, at the moment it needs to know. What it learns goes back into the same files, so the next session gets it too.</span><span lang="zh">智能体不必“记住”项目。它需要知道什么，就在那一刻从文件里被告知；它学到的东西写回同一批文件，下一次会话也能用上。</span></figcaption>
+      </figure>
+      <details>
+        <summary><span lang="en">Sources</span><span lang="zh">出处</span></summary>
+        <div class="src"><span lang="en">README.md “Why Trellis?”; <code>.trellis/workflow.md</code> Core Principles; platform count from <code>packages/cli/src/types/ai-tools.ts</code> (22 entries in <code>AI_TOOLS</code>).</span><span lang="zh">README.md “Why Trellis?”；<code>.trellis/workflow.md</code> Core Principles；平台数量取自 <code>packages/cli/src/types/ai-tools.ts</code>（<code>AI_TOOLS</code> 共 22 项）。</span></div>
+      </details>
+    </section>
+
+    <!-- ============ 2 PROBLEM ============ -->
+    <section id="problem" data-layer="problem">
+      <div class="eyebrow"><span lang="en">Problem</span><span lang="zh">问题</span></div>
+      <h2 class="claim"><span lang="en">Without files to fall back on, what the agent knows about your project keeps dropping to zero</span><span lang="zh">如果没有文件兜底，智能体对项目的了解会一次次归零</span></h2>
+      <p class="why"><span lang="en">Conversations get compacted. Files don't. Anything that lives only in the chat is lost at the next compaction, the next session, or the next tool.</span><span lang="zh">对话会被压缩，文件不会。只存在于对话里的东西，下次压缩、下次会话、换下一个工具时就会丢掉。</span></p>
+      <figure>
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 0 880 270" role="img" aria-label="Illustrative chart: with chat alone, project knowledge drops at each compaction, new session and tool switch; with Trellis it drops only to a floor of re-injected files, and that floor rises as lessons are written back to spec.">
+          <text x="70" y="24" class="t-s"><tspan lang="en">What the agent knows about your project (illustrative)</tspan><tspan lang="zh">智能体对项目的了解程度（示意）</tspan></text>
+          <line class="axis" x1="70" y1="40" x2="70" y2="200"/>
+          <line class="axis" x1="70" y1="200" x2="860" y2="200"/>
+          <line class="guide" x1="260" y1="40" x2="260" y2="200"/>
+          <line class="guide" x1="400" y1="40" x2="400" y2="200"/>
+          <line class="guide" x1="620" y1="40" x2="620" y2="200"/>
+          <text x="74" y="220" class="t-s"><tspan lang="en">session 1</tspan><tspan lang="zh">会话 1</tspan></text>
+          <text x="260" y="220" class="t-s" text-anchor="middle"><tspan lang="en">context compacted</tspan><tspan lang="zh">上下文被压缩</tspan></text>
+          <text x="400" y="220" class="t-s" text-anchor="middle"><tspan lang="en">new session</tspan><tspan lang="zh">新会话</tspan></text>
+          <text x="620" y="220" class="t-s" text-anchor="middle"><tspan lang="en">switch AI tool</tspan><tspan lang="zh">换一个 AI 工具</tspan></text>
+          <polyline class="ln-warn" points="70,200 258,72 260,150 398,108 400,200 618,86 620,200 860,98"/>
+          <polyline class="ln-acc" points="70,122 258,62 260,98 398,56 400,92 618,50 620,86 860,44"/>
+          <text x="150" y="176" class="t-s t-warn"><tspan lang="en">you explain again</tspan><tspan lang="zh">你再讲一遍</tspan></text>
+          <line class="ln-warn" x1="70" y1="248" x2="104" y2="248"/>
+          <text x="112" y="252" class="t-s"><tspan lang="en">chat only: resets at every break</tspan><tspan lang="zh">只靠对话：每次中断都归零</tspan></text>
+          <line class="ln-acc" x1="420" y1="248" x2="454" y2="248"/>
+          <text x="462" y="252" class="t-s"><tspan lang="en">with Trellis: files re-injected, the floor keeps rising</tspan><tspan lang="zh">有 Trellis：文件被重新注入，底线持续抬高</tspan></text>
+        </svg>
+        </div>
+        <figcaption><span lang="en">The dashed line drops back to zero at every break. The solid line only drops to what the files hold, and that floor rises as each task writes its lessons back into <code>spec/</code>.</span><span lang="zh">虚线在每次中断时回到零。实线只会回落到文件里已有的水平，而每个任务都会把经验写回 <code>spec/</code>，所以这条底线一直在抬高。</span></figcaption>
+      </figure>
+
+      <div class="cards">
+        <div class="card"><svg aria-hidden="true"><use href="#i-spec"/></svg>
+          <h3><span lang="en">One giant rules file</span><span lang="zh">越写越长的规则文件</span></h3>
+          <p><span lang="en"><code>CLAUDE.md</code>, <code>AGENTS.md</code> and <code>.cursorrules</code> keep growing until nobody, human or model, reads all of it.</span><span lang="zh"><code>CLAUDE.md</code>、<code>AGENTS.md</code>、<code>.cursorrules</code> 不断膨胀，最后人和模型都读不完。</span></p>
+          <div class="fix">→ <b><span lang="en">Scoped specs</span><span lang="zh">分域规范</span></b></div></div>
+        <div class="card"><svg aria-hidden="true"><use href="#i-agent"/></svg>
+          <h3><span lang="en">Repeating yourself</span><span lang="zh">同样的话反复讲</span></h3>
+          <p><span lang="en">Each new session starts without your conventions, so you explain them again.</span><span lang="zh">每次新会话都不带你的约定，你只能再讲一遍。</span></p>
+          <div class="fix">→ <b><span lang="en">Scoped specs</span><span lang="zh">分域规范</span></b><b><span lang="en">Injecting hooks</span><span lang="zh">注入式 hook</span></b></div></div>
+        <div class="card"><svg aria-hidden="true"><use href="#i-journal"/></svg>
+          <h3><span lang="en">Compaction erases decisions</span><span lang="zh">压缩抹掉了决策</span></h3>
+          <p><span lang="en">Long chats get compacted. Whatever lived only in the conversation is gone.</span><span lang="zh">长对话会被压缩，只存在于对话里的东西就没了。</span></p>
+          <div class="fix">→ <b><span lang="en">Task directories</span><span lang="zh">任务目录</span></b><b><span lang="en">Journals + tl mem</span><span lang="zh">日志 + tl mem</span></b></div></div>
+        <div class="card"><svg aria-hidden="true"><use href="#i-spec"/></svg>
+          <h3><span lang="en">Rules half-remembered</span><span lang="zh">规则只记得一半</span></h3>
+          <p><span lang="en">The agent recalls guidelines from earlier chat instead of reading the current version.</span><span lang="zh">智能体凭之前的对话回忆规范，而不是读当前版本。</span></p>
+          <div class="fix">→ <b><span lang="en">Injecting hooks</span><span lang="zh">注入式 hook</span></b></div></div>
+        <div class="card"><svg aria-hidden="true"><use href="#i-task"/></svg>
+          <h3><span lang="en">Skipped steps</span><span lang="zh">必需步骤被跳过</span></h3>
+          <p><span lang="en">A required step that isn't restated every turn gets skipped without a word. This happened to both the planning gate and the final commit.</span><span lang="zh">没有每轮重申的必需步骤，会被悄悄跳过。规划关卡和最后的提交都出过这种事。</span></p>
+          <div class="fix">→ <b><span lang="en">Injecting hooks</span><span lang="zh">注入式 hook</span></b><b><span lang="en">Task directories</span><span lang="zh">任务目录</span></b></div></div>
+        <div class="card"><svg aria-hidden="true"><use href="#i-hook"/></svg>
+          <h3><span lang="en">Context overload</span><span lang="zh">上下文过载</span></h3>
+          <p><span lang="en">Pouring every doc in at session start crosses the host's truncation limit, and the agent sees only a preview.</span><span lang="zh">会话开始就灌入全部文档，会超过宿主的截断上限，智能体只能看到一段预览。</span></p>
+          <div class="fix">→ <b><span lang="en">Injecting hooks</span><span lang="zh">注入式 hook</span></b></div></div>
+        <div class="card"><svg aria-hidden="true"><use href="#i-platform"/></svg>
+          <h3><span lang="en">One setup per tool</span><span lang="zh">每个工具各配一套</span></h3>
+          <p><span lang="en">Each AI tool has its own format for hooks, agents and skills, so the workflow gets rebuilt for each one.</span><span lang="zh">每种 AI 工具的 hook、agent、skill 格式都不一样，工作流得逐个重建。</span></p>
+          <div class="fix">→ <b><span lang="en">One source, 22 tools</span><span lang="zh">一套模板，22 种工具</span></b></div></div>
+        <div class="card"><svg aria-hidden="true"><use href="#i-dev"/></svg>
+          <h3><span lang="en">Knowledge stays personal</span><span lang="zh">经验只留在个人手里</span></h3>
+          <p><span lang="en">Rules one developer worked out stay in a private chat history, where the team can't see or review them.</span><span lang="zh">一个人摸索出的规则只留在个人聊天记录里，团队看不到，也没法评审。</span></p>
+          <div class="fix">→ <b><span lang="en">Scoped specs</span><span lang="zh">分域规范</span></b><b><span lang="en">Versioned in git</span><span lang="zh">随 git 版本化</span></b></div></div>
+      </div>
+      <details>
+        <summary><span lang="en">Sources</span><span lang="zh">出处</span></summary>
+        <div class="src"><span lang="en">README.md FAQ (monolithic rule files) and “Why Trellis?” table; <code>.trellis/workflow.md</code> Core Principles 2 and 3; the breadcrumb contract comment in <code>.trellis/workflow.md</code> (skipped planning gate and commit); <code>.trellis/spec/cli/backend/platform-integration.md</code> “Inject Orientation, Not References” (truncation).</span><span lang="zh">README.md 常见问题（规则文件膨胀）与 “为什么用 Trellis？” 表格；<code>.trellis/workflow.md</code> Core Principles 第 2、3 条；<code>.trellis/workflow.md</code> 中 breadcrumb 契约注释（规划关卡与提交被跳过）；<code>.trellis/spec/cli/backend/platform-integration.md</code> “Inject Orientation, Not References”（截断）。</span></div>
+      </details>
+    </section>
+
+    <!-- ============ 3 MAPPING ============ -->
+    <section id="mapping" data-layer="solution">
+      <div class="eyebrow"><span lang="en">Solution</span><span lang="zh">解法</span></div>
+      <h2 class="claim"><span lang="en">Six mechanisms, each answering specific problems</span><span lang="zh">六个机制，各自对应具体的问题</span></h2>
+      <p class="why"><span lang="en">Hover or tab to a box to trace its links. Notice that the injecting hooks answer the most problems, which is why “Context injection” covers them in detail.</span><span lang="zh">把鼠标移到某个方块上（或用 Tab 键选中），就能看到它的连线。注入式 hook 解决的问题最多，所以“上下文注入”一节会专门展开。</span></p>
+      <figure id="mapfig">
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 0 880 400" role="img" aria-label="Problem to mechanism map. Scoped specs fix the giant rules file, repetition and personal knowledge. Injecting hooks fix repetition, half-remembered rules, skipped steps and context overload. Task directories fix compaction loss and skipped steps. Journals and tl mem fix compaction loss. One template source fixes per-tool setup. Git versioning fixes personal knowledge.">
+          <!-- edges -->
+          <g>
+            <path class="e-acc mp-edge" data-p="p1" data-m="m1" d="M290 35 C440 35 440 42 588 42"/>
+            <path class="e-acc mp-edge" data-p="p2" data-m="m1" d="M290 83 C440 83 440 42 588 42"/>
+            <path class="e-acc mp-edge" data-p="p2" data-m="m2" d="M290 83 C440 83 440 106 588 106"/>
+            <path class="e-acc mp-edge" data-p="p3" data-m="m3" d="M290 131 C440 131 440 170 588 170"/>
+            <path class="e-acc mp-edge" data-p="p3" data-m="m4" d="M290 131 C440 131 440 234 588 234"/>
+            <path class="e-acc mp-edge" data-p="p4" data-m="m2" d="M290 179 C440 179 440 106 588 106"/>
+            <path class="e-acc mp-edge" data-p="p5" data-m="m2" d="M290 227 C440 227 440 106 588 106"/>
+            <path class="e-acc mp-edge" data-p="p5" data-m="m3" d="M290 227 C440 227 440 170 588 170"/>
+            <path class="e-acc mp-edge" data-p="p6" data-m="m2" d="M290 275 C440 275 440 106 588 106"/>
+            <path class="e-acc mp-edge" data-p="p7" data-m="m5" d="M290 323 C440 323 440 298 588 298"/>
+            <path class="e-acc mp-edge" data-p="p8" data-m="m1" d="M290 371 C440 371 440 42 588 42"/>
+            <path class="e-acc mp-edge" data-p="p8" data-m="m6" d="M290 371 C440 371 440 362 588 362"/>
+          </g>
+          <!-- problems -->
+          <g class="mp-node" data-k="p1" tabindex="0"><rect class="box-warn" x="20" y="16" width="270" height="38" rx="8"/><use href="#i-spec" class="ic-warn" x="30" y="24" width="22" height="22"/><text x="62" y="40"><tspan lang="en">One giant rules file</tspan><tspan lang="zh">越写越长的规则文件</tspan></text></g>
+          <g class="mp-node" data-k="p2" tabindex="0"><rect class="box-warn" x="20" y="64" width="270" height="38" rx="8"/><use href="#i-agent" class="ic-warn" x="30" y="72" width="22" height="22"/><text x="62" y="88"><tspan lang="en">Repeating yourself</tspan><tspan lang="zh">同样的话反复讲</tspan></text></g>
+          <g class="mp-node" data-k="p3" tabindex="0"><rect class="box-warn" x="20" y="112" width="270" height="38" rx="8"/><use href="#i-journal" class="ic-warn" x="30" y="120" width="22" height="22"/><text x="62" y="136"><tspan lang="en">Compaction erases decisions</tspan><tspan lang="zh">压缩抹掉了决策</tspan></text></g>
+          <g class="mp-node" data-k="p4" tabindex="0"><rect class="box-warn" x="20" y="160" width="270" height="38" rx="8"/><use href="#i-spec" class="ic-warn" x="30" y="168" width="22" height="22"/><text x="62" y="184"><tspan lang="en">Rules half-remembered</tspan><tspan lang="zh">规则只记得一半</tspan></text></g>
+          <g class="mp-node" data-k="p5" tabindex="0"><rect class="box-warn" x="20" y="208" width="270" height="38" rx="8"/><use href="#i-task" class="ic-warn" x="30" y="216" width="22" height="22"/><text x="62" y="232"><tspan lang="en">Skipped steps</tspan><tspan lang="zh">必需步骤被跳过</tspan></text></g>
+          <g class="mp-node" data-k="p6" tabindex="0"><rect class="box-warn" x="20" y="256" width="270" height="38" rx="8"/><use href="#i-hook" class="ic-warn" x="30" y="264" width="22" height="22"/><text x="62" y="280"><tspan lang="en">Context overload</tspan><tspan lang="zh">上下文过载</tspan></text></g>
+          <g class="mp-node" data-k="p7" tabindex="0"><rect class="box-warn" x="20" y="304" width="270" height="38" rx="8"/><use href="#i-platform" class="ic-warn" x="30" y="312" width="22" height="22"/><text x="62" y="328"><tspan lang="en">One setup per tool</tspan><tspan lang="zh">每个工具各配一套</tspan></text></g>
+          <g class="mp-node" data-k="p8" tabindex="0"><rect class="box-warn" x="20" y="352" width="270" height="38" rx="8"/><use href="#i-dev" class="ic-warn" x="30" y="360" width="22" height="22"/><text x="62" y="376"><tspan lang="en">Knowledge stays personal</tspan><tspan lang="zh">经验只留在个人手里</tspan></text></g>
+          <!-- mechanisms -->
+          <g class="mp-node" data-k="m1" tabindex="0"><rect class="box-acc" x="590" y="16" width="270" height="52" rx="8"/><use href="#i-spec" class="ic-acc" x="600" y="31" width="22" height="22"/><text x="632" y="38" class="t-h"><tspan lang="en">Scoped specs</tspan><tspan lang="zh">分域规范</tspan></text><text x="632" y="57" class="t-s"><tspan lang="en">.trellis/spec/, by package &amp; layer</tspan><tspan lang="zh">.trellis/spec/，按包与分层</tspan></text></g>
+          <g class="mp-node" data-k="m2" tabindex="0"><rect class="box-acc" x="590" y="80" width="270" height="52" rx="8"/><use href="#i-hook" class="ic-acc" x="600" y="95" width="22" height="22"/><text x="632" y="102" class="t-h"><tspan lang="en">Injecting hooks</tspan><tspan lang="zh">注入式 hook</tspan></text><text x="632" y="121" class="t-s"><tspan lang="en">session · prompt · sub-agent start</tspan><tspan lang="zh">会话开始 · 每次提问 · 子智能体启动</tspan></text></g>
+          <g class="mp-node" data-k="m3" tabindex="0"><rect class="box-acc" x="590" y="144" width="270" height="52" rx="8"/><use href="#i-task" class="ic-acc" x="600" y="159" width="22" height="22"/><text x="632" y="166" class="t-h"><tspan lang="en">Task directories</tspan><tspan lang="zh">任务目录</tspan></text><text x="632" y="185" class="t-s"><tspan lang="en">.trellis/tasks/: PRD, plan, context</tspan><tspan lang="zh">.trellis/tasks/：PRD、计划、上下文</tspan></text></g>
+          <g class="mp-node" data-k="m4" tabindex="0"><rect class="box-acc" x="590" y="208" width="270" height="52" rx="8"/><use href="#i-journal" class="ic-acc" x="600" y="223" width="22" height="22"/><text x="632" y="230" class="t-h"><tspan lang="en">Journals + tl mem</tspan><tspan lang="zh">日志 + tl mem</tspan></text><text x="632" y="249" class="t-s"><tspan lang="en">per-dev journals, search past chats</tspan><tspan lang="zh">个人日志，检索过往对话</tspan></text></g>
+          <g class="mp-node" data-k="m5" tabindex="0"><rect class="box-acc" x="590" y="272" width="270" height="52" rx="8"/><use href="#i-platform" class="ic-acc" x="600" y="287" width="22" height="22"/><text x="632" y="294" class="t-h"><tspan lang="en">One source, 22 tools</tspan><tspan lang="zh">一套模板，22 种工具</tspan></text><text x="632" y="313" class="t-s"><tspan lang="en">templates rendered per platform</tspan><tspan lang="zh">模板按平台渲染</tspan></text></g>
+          <g class="mp-node" data-k="m6" tabindex="0"><rect class="box-acc" x="590" y="336" width="270" height="52" rx="8"/><use href="#i-repo" class="ic-acc" x="600" y="351" width="22" height="22"/><text x="632" y="358" class="t-h"><tspan lang="en">Versioned in git</tspan><tspan lang="zh">随 git 版本化</tspan></text><text x="632" y="377" class="t-s"><tspan lang="en">reviewed like code</tspan><tspan lang="zh">像代码一样评审</tspan></text></g>
+        </svg>
+        </div>
+        <figcaption><span lang="en">Left: the eight problems from the previous section. Right: the Trellis mechanism that answers each one. Specs and tasks are shared through git, while journals stay per developer, so teammates don't conflict.</span><span lang="zh">左边是上一节的八个问题，右边是对应的 Trellis 机制。规范和任务通过 git 共享，日志则按开发者分开，所以团队成员之间不会冲突。</span></figcaption>
+      </figure>
+      <details>
+        <summary><span lang="en">Sources</span><span lang="zh">出处</span></summary>
+        <div class="src"><span lang="en">README.md “Why Trellis?” and FAQ (team use); <code>.trellis/workflow.md</code> Task System and Workspace System; <code>.trellis/spec/cli/backend/commands-mem.md</code>.</span><span lang="zh">README.md “为什么用 Trellis？” 与常见问题（团队使用）；<code>.trellis/workflow.md</code> Task System 与 Workspace System；<code>.trellis/spec/cli/backend/commands-mem.md</code>。</span></div>
+      </details>
+    </section>
+
+    <!-- ============ 4 WORKFLOW ============ -->
+    <section id="workflow" data-layer="solution">
+      <div class="eyebrow"><span lang="en">Solution · workflow</span><span lang="zh">解法 · 工作流</span></div>
+      <h2 class="claim"><span lang="en">Every piece of work is a task that moves through three phases, and approval to plan is not approval to code</span><span lang="zh">每项工作都是一个任务，按三个阶段推进；同意规划不等于同意写代码</span></h2>
+      <p class="why"><span lang="en">The task directory is where decisions survive compaction. <code>task.py start</code> is the gate between planning and code, and it refuses to run while the context lists are empty.</span><span lang="zh">任务目录是决策扛过上下文压缩的地方。<code>task.py start</code> 是规划和写代码之间的关卡：上下文清单还空着时，它会拒绝执行。</span></p>
+      <figure>
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 0 880 322" role="img" aria-label="Task workflow. Plan: create task after consent, brainstorm into prd.md, design.md and implement.md, pick specs into jsonl lists. task.py start moves the task to Execute: trellis-implement writes code, trellis-check runs lint and tests and loops back on failure, hooks inject task context. After checks pass, Finish: update-spec writes lessons into spec, commit, journal entry, archive. The updated spec feeds the next task's planning.">
+          <!-- headers -->
+          <rect class="box-acc" x="20" y="16" width="250" height="50" rx="8"/>
+          <text x="34" y="38" class="t-h"><tspan lang="en">1 · Plan</tspan><tspan lang="zh">1 · 规划</tspan></text>
+          <text x="34" y="56" class="t-c t-acc" data-neutral>status: planning</text>
+          <rect class="box-acc" x="315" y="16" width="250" height="50" rx="8"/>
+          <text x="329" y="38" class="t-h"><tspan lang="en">2 · Execute</tspan><tspan lang="zh">2 · 执行</tspan></text>
+          <text x="329" y="56" class="t-c t-acc" data-neutral>status: in_progress</text>
+          <rect class="box-acc" x="610" y="16" width="250" height="50" rx="8"/>
+          <text x="624" y="38" class="t-h"><tspan lang="en">3 · Finish</tspan><tspan lang="zh">3 · 收尾</tspan></text>
+          <text x="624" y="56" class="t-c t-acc" data-neutral>archive → completed</text>
+          <path class="e-acc" d="M270 41 H313"/>
+          <text x="292" y="32" class="t-c t-s" text-anchor="middle" data-neutral>start</text>
+          <path class="e-acc" d="M565 41 H608"/>
+          <text x="587" y="32" class="t-s" text-anchor="middle"><tspan lang="en">pass</tspan><tspan lang="zh">通过</tspan></text>
+
+          <!-- plan -->
+          <rect class="box" x="20" y="80" width="250" height="36" rx="7"/><use href="#i-task" class="ic-acc" x="30" y="87" width="22" height="22"/>
+          <text x="60" y="103"><tspan lang="en">Create task (after you agree)</tspan><tspan lang="zh">建任务（征得你同意后）</tspan></text>
+          <rect class="box" x="20" y="126" width="250" height="36" rx="7"/><use href="#i-agent" class="ic-acc" x="30" y="133" width="22" height="22"/>
+          <text x="60" y="149"><tspan lang="en">Brainstorm → </tspan><tspan lang="zh">需求澄清 → </tspan><tspan class="t-c">prd.md</tspan></text>
+          <rect class="box" x="20" y="172" width="250" height="36" rx="7"/><use href="#i-task" class="ic-acc" x="30" y="179" width="22" height="22"/>
+          <text x="60" y="195" class="t-c" data-neutral>design.md + implement.md</text>
+          <rect class="box" x="20" y="218" width="250" height="36" rx="7"/><use href="#i-spec" class="ic-acc" x="30" y="225" width="22" height="22"/>
+          <text x="60" y="241"><tspan lang="en">Pick specs → </tspan><tspan lang="zh">挑选规范 → </tspan><tspan class="t-c">*.jsonl</tspan></text>
+
+          <!-- execute -->
+          <rect class="box" x="315" y="80" width="250" height="36" rx="7"/><use href="#i-agent" class="ic-acc" x="325" y="87" width="22" height="22"/>
+          <text x="355" y="103"><tspan class="t-c">trellis-implement</tspan><tspan lang="en">: code</tspan><tspan lang="zh">：写代码</tspan></text>
+          <rect class="box" x="315" y="126" width="250" height="36" rx="7"/><use href="#i-agent" class="ic-acc" x="325" y="133" width="22" height="22"/>
+          <text x="355" y="149"><tspan class="t-c">trellis-check</tspan><tspan lang="en">: lint, tests</tspan><tspan lang="zh">：lint、测试</tspan></text>
+          <path class="e" d="M565 144 H582 V98 H567"/>
+          <text x="590" y="125" class="t-s"><tspan lang="en">fix</tspan><tspan lang="zh">修</tspan></text>
+          <rect class="box-sunk" x="315" y="172" width="250" height="36" rx="7"/><use href="#i-hook" class="ic-acc" x="325" y="179" width="22" height="22"/>
+          <text x="355" y="195"><tspan lang="en">hooks inject the task context</tspan><tspan lang="zh">hook 注入任务上下文</tspan></text>
+
+          <!-- finish -->
+          <rect class="box" x="610" y="80" width="250" height="36" rx="7"/><use href="#i-spec" class="ic-acc" x="620" y="87" width="22" height="22"/>
+          <text x="650" y="103"><tspan class="t-c">update-spec</tspan><tspan lang="en">: lessons → spec/</tspan><tspan lang="zh">：经验 → spec/</tspan></text>
+          <rect class="box" x="610" y="126" width="250" height="36" rx="7"/><use href="#i-repo" class="ic-acc" x="620" y="133" width="22" height="22"/>
+          <text x="650" y="149"><tspan lang="en">Commit the change</tspan><tspan lang="zh">提交改动</tspan></text>
+          <rect class="box" x="610" y="172" width="250" height="36" rx="7"/><use href="#i-journal" class="ic-acc" x="620" y="179" width="22" height="22"/>
+          <text x="650" y="195"><tspan lang="en">Journal: </tspan><tspan lang="zh">记日志：</tspan><tspan class="t-c">add_session.py</tspan></text>
+          <rect class="box" x="610" y="218" width="250" height="36" rx="7"/><use href="#i-task" class="ic-acc" x="620" y="225" width="22" height="22"/>
+          <text x="650" y="241"><tspan lang="en">Archive the task</tspan><tspan lang="zh">归档任务</tspan></text>
+
+          <!-- learning loop -->
+          <path class="e-acc" d="M735 254 V290 H145 V258"/>
+          <text x="440" y="312" class="t-s t-acc" text-anchor="middle"><tspan lang="en">the next task plans with the updated spec/</tspan><tspan lang="zh">下一个任务带着更新后的 spec/ 开始规划</tspan></text>
+        </svg>
+        </div>
+        <figcaption><span lang="en">Simple tasks may stop at <code>prd.md</code>. Complex ones need <code>design.md</code> and <code>implement.md</code> before <code>start</code>. The loop at the bottom is why the floor in the problem chart rises.</span><span lang="zh">简单任务可以只有 <code>prd.md</code>；复杂任务在 <code>start</code> 之前必须有 <code>design.md</code> 和 <code>implement.md</code>。底部这条回路，就是问题图里那条底线能持续抬高的原因。</span></figcaption>
+      </figure>
+      <details>
+        <summary><span lang="en">What each file in a task directory holds</span><span lang="zh">任务目录里每个文件放什么</span></summary>
+        <div>
+          <ul>
+            <li><code>task.json</code> · <span lang="en">status, branch, parent/child links</span><span lang="zh">状态、分支、父子任务关系</span></li>
+            <li><code>prd.md</code> · <span lang="en">requirements and acceptance criteria only</span><span lang="zh">只写需求和验收标准</span></li>
+            <li><code>design.md</code> · <span lang="en">boundaries, contracts, data flow, tradeoffs</span><span lang="zh">边界、契约、数据流、取舍</span></li>
+            <li><code>implement.md</code> · <span lang="en">ordered checklist, validation commands, rollback points</span><span lang="zh">有序清单、验证命令、回滚点</span></li>
+            <li><code>implement.jsonl</code> / <code>check.jsonl</code> · <span lang="en">spec and research files the sub-agents receive</span><span lang="zh">子智能体会收到的规范与调研文件</span></li>
+            <li><code>research/</code> · <span lang="en">findings persisted by <code>trellis-research</code></span><span lang="zh"><code>trellis-research</code> 落盘的调研结果</span></li>
+          </ul>
+          <p class="src"><span lang="en">Sources: <code>.trellis/workflow.md</code> Phase Index, Planning Artifacts, Task System; README.md “How It Works”.</span><span lang="zh">出处：<code>.trellis/workflow.md</code> Phase Index、Planning Artifacts、Task System；README.md “工作原理”。</span></p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ 5 INJECTION ============ -->
+    <section id="injection" data-layer="solution">
+      <div class="eyebrow"><span lang="en">Solution · injection</span><span lang="zh">解法 · 注入</span></div>
+      <h2 class="claim"><span lang="en">Context arrives at three moments, each kept small, and the rest is loaded on demand</span><span lang="zh">上下文在三个时刻送达，每次都尽量精简，其余内容按需加载</span></h2>
+      <p class="why"><span lang="en">Large payloads used to hit host truncation, so SessionStart now sends orientation and paths, not whole documents. Step details come from <code>get_context.py --mode phase --step X.Y</code> when the agent needs them.</span><span lang="zh">过去注入的内容太大，会被宿主截断。所以现在 SessionStart 只送方位信息和路径，不送整篇文档。某一步的细节，等智能体需要时再通过 <code>get_context.py --mode phase --step X.Y</code> 加载。</span></p>
+      <figure>
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 0 880 272" role="img" aria-label="Three injection moments along an agent session. At session start, session-start.py sends compact orientation from .trellis state. On every prompt, inject-workflow-state.py sends a workflow-state breadcrumb taken from the workflow-state blocks in workflow.md. When a sub-agent starts, inject-subagent-context.py sends prd.md, the plan and the spec files listed in the jsonl files.">
+          <!-- sources -->
+          <rect class="box-sunk" x="25" y="16" width="250" height="52" rx="8"/>
+          <text x="41" y="38" class="t-c" data-neutral>.trellis/ state</text>
+          <text x="41" y="57" class="t-s"><tspan lang="en">developer, git, task, phase index</tspan><tspan lang="zh">开发者、git、任务、阶段索引</tspan></text>
+          <rect class="box-sunk" x="315" y="16" width="250" height="52" rx="8"/>
+          <text x="331" y="38" class="t-c" data-neutral>workflow.md</text>
+          <text x="331" y="57" class="t-s"><tspan class="t-c">[workflow-state:*]</tspan><tspan lang="en"> blocks</tspan><tspan lang="zh"> 标记块</tspan></text>
+          <rect class="box-sunk" x="605" y="16" width="250" height="52" rx="8"/>
+          <text x="621" y="38" class="t-c" data-neutral>prd.md + *.jsonl</text>
+          <text x="621" y="57" class="t-s"><tspan lang="en">→ the spec files they list</tspan><tspan lang="zh">→ 清单里列出的规范文件</tspan></text>
+          <path class="e" d="M150 68 V102"/><path class="e" d="M440 68 V102"/><path class="e" d="M730 68 V102"/>
+
+          <!-- hooks -->
+          <rect class="box-acc" x="25" y="104" width="250" height="44" rx="8"/>
+          <use href="#i-hook" class="ic-acc" x="37" y="115" width="22" height="22"/>
+          <text x="67" y="131" class="t-c" data-neutral>session-start.py</text>
+          <rect class="box-acc" x="315" y="104" width="250" height="44" rx="8"/>
+          <use href="#i-hook" class="ic-acc" x="327" y="115" width="22" height="22"/>
+          <text x="357" y="131" class="t-c" data-neutral>inject-workflow-state.py</text>
+          <rect class="box-acc" x="605" y="104" width="250" height="44" rx="8"/>
+          <use href="#i-hook" class="ic-acc" x="617" y="115" width="22" height="22"/>
+          <text x="647" y="131" class="t-c" data-neutral>inject-subagent-context.py</text>
+
+          <!-- payloads -->
+          <path class="e-acc" d="M150 148 V220"/>
+          <text x="158" y="190" class="t-s t-acc"><tspan lang="en">compact orientation</tspan><tspan lang="zh">精简的方位信息</tspan></text>
+          <path class="e-acc" d="M440 148 V220"/>
+          <path class="e-acc" d="M440 148 L392 220" opacity=".55"/>
+          <path class="e-acc" d="M440 148 L488 220" opacity=".55"/>
+          <text x="496" y="176" class="t-s t-acc"><tspan class="t-c">&lt;workflow-state&gt;</tspan><tspan lang="en"> breadcrumb</tspan><tspan lang="zh"> 提示</tspan></text>
+          <path class="e-acc" d="M730 148 V220"/>
+          <text x="738" y="190" class="t-s t-acc"><tspan lang="en">PRD + plan + specs</tspan><tspan lang="zh">PRD + 计划 + 规范</tspan></text>
+
+          <!-- session timeline -->
+          <line class="axis" x1="25" y1="230" x2="852" y2="230" marker-end="url(#m-muted)"/>
+          <circle class="dot" cx="150" cy="230" r="6"/>
+          <circle class="dot" cx="392" cy="230" r="5"/><circle class="dot" cx="440" cy="230" r="5"/><circle class="dot" cx="488" cy="230" r="5"/>
+          <circle class="dot" cx="730" cy="230" r="6"/>
+          <text x="150" y="254" class="t-s" text-anchor="middle"><tspan lang="en">session starts</tspan><tspan lang="zh">会话开始</tspan></text>
+          <text x="440" y="254" class="t-s" text-anchor="middle"><tspan lang="en">every prompt</tspan><tspan lang="zh">每次提问</tspan></text>
+          <text x="730" y="254" class="t-s" text-anchor="middle"><tspan lang="en">sub-agent starts</tspan><tspan lang="zh">子智能体启动</tspan></text>
+          <text x="852" y="254" class="t-s" text-anchor="end"><tspan lang="en">time</tspan><tspan lang="zh">时间</tspan></text>
+        </svg>
+        </div>
+        <figcaption><span lang="en">The per-prompt breadcrumb comes from the <code>[workflow-state:STATUS]</code> blocks in <code>workflow.md</code>, its single source of truth. Every required step must be named there, or agents skip it.</span><span lang="zh">每次提问时注入的提示取自 <code>workflow.md</code> 里的 <code>[workflow-state:STATUS]</code> 标记块，这是它唯一的来源。每个必需步骤都必须写在里面，否则智能体会跳过它。</span></figcaption>
+      </figure>
+
+      <h3 style="font:650 17px/1.3 var(--display);margin:34px 0 6px"><span lang="en">Not every tool has hooks: the 22 platforms by how sub-agents get context</span><span lang="zh">并非每种工具都有 hook：22 个平台按子智能体获取上下文的方式分类</span></h3>
+      <figure>
+        <svg class="d" viewBox="0 0 880 74" role="img" aria-label="Bar of 22 platforms: 9 hook-inject, 7 pull-based, 2 extension-backed, 3 commands and skills only, 1 skills-first.">
+          <rect class="seg1" x="0" y="30" width="360" height="28"/>
+          <rect class="seg2" x="360" y="30" width="280" height="28"/>
+          <rect class="seg3" x="640" y="30" width="80" height="28"/>
+          <rect class="seg4" x="720" y="30" width="120" height="28"/>
+          <rect class="seg5" x="840" y="30" width="40" height="28"/>
+          <path class="unit" d="M40 30v28M80 30v28M120 30v28M160 30v28M200 30v28M240 30v28M280 30v28M320 30v28M360 30v28M400 30v28M440 30v28M480 30v28M520 30v28M560 30v28M600 30v28M640 30v28M680 30v28M720 30v28M760 30v28M800 30v28M840 30v28"/>
+          <text x="180" y="20" class="t-h" text-anchor="middle" data-neutral>9</text>
+          <text x="500" y="20" class="t-h" text-anchor="middle" data-neutral>7</text>
+          <text x="680" y="20" class="t-h" text-anchor="middle" data-neutral>2</text>
+          <text x="780" y="20" class="t-h" text-anchor="middle" data-neutral>3</text>
+          <text x="860" y="20" class="t-h" text-anchor="middle" data-neutral>1</text>
+          <text x="0" y="72" class="t-s"><tspan lang="en">one cell = one platform</tspan><tspan lang="zh">每格代表一个平台</tspan></text>
+          <text x="876" y="72" class="t-s" text-anchor="end"><tspan lang="en">22 in AI_TOOLS</tspan><tspan lang="zh">AI_TOOLS 共 22 项</tspan></text>
+        </svg>
+      </figure>
+      <div class="classes">
+        <div class="cls"><span class="n"><i style="background:var(--c1)"></i><span data-neutral>9</span></span>
+          <h3><span lang="en">Hook-inject (class 1)</span><span lang="zh">Hook 注入（第 1 类）</span></h3>
+          <p><span lang="en">A hook fires when the sub-agent starts and injects the task context before it runs.</span><span lang="zh">子智能体启动时 hook 触发，在它运行前注入任务上下文。</span></p>
+          <p class="pl" data-neutral>Claude Code · Cursor · OpenCode · Kiro · CodeBuddy · Codex · Factory Droid · ZCode · Snow CLI</p></div>
+        <div class="cls"><span class="n"><i style="background:var(--c2)"></i><span data-neutral>7</span></span>
+          <h3><span lang="en">Pull-based prelude (class 2)</span><span lang="zh">主动拉取前言（第 2 类）</span></h3>
+          <p><span lang="en">No usable sub-agent hook. Each agent file starts with a “load Trellis context first” prelude, and the agent reads the files itself.</span><span lang="zh">没有可用的子智能体 hook。每个 agent 文件开头都有一段“先加载 Trellis 上下文”的前言，由智能体自己去读文件。</span></p>
+          <p class="pl" data-neutral>Gemini CLI · Qoder · GitHub Copilot · Reasonix · Trae · Grok Build · Kimi Code</p></div>
+        <div class="cls"><span class="n"><i style="background:var(--c3)"></i><span data-neutral>2</span></span>
+          <h3><span lang="en">Extension-backed (class 3)</span><span lang="zh">扩展承载（第 3 类）</span></h3>
+          <p><span lang="en">A project-local extension owns the sub-agent tool and builds the context itself.</span><span lang="zh">由项目内的扩展接管子智能体工具，并自行组装上下文。</span></p>
+          <p class="pl" data-neutral>Pi Agent · Oh My Pi</p></div>
+        <div class="cls"><span class="n"><i style="background:var(--c4)"></i><span data-neutral>3</span></span>
+          <h3><span lang="en">Commands + skills only</span><span lang="zh">只有命令与 skill</span></h3>
+          <p><span lang="en">No hook surface and no sub-agents, so these tools get the commands and skills only.</span><span lang="zh">没有 hook 接口，也没有子智能体，只装命令和 skill。</span></p>
+          <p class="pl" data-neutral>Kilo · Antigravity · Devin</p></div>
+        <div class="cls"><span class="n"><i style="background:var(--c5)"></i><span data-neutral>1</span></span>
+          <h3><span lang="en">Skills-first</span><span lang="zh">以 skill 为主</span></h3>
+          <p><span lang="en">Loads Trellis skills by name and ships no session hook.</span><span lang="zh">按名字加载 Trellis skill，不带会话 hook。</span></p>
+          <p class="pl" data-neutral>DeepSeek Harness (dsh)</p></div>
+      </div>
+      <details>
+        <summary><span lang="en">Sources</span><span lang="zh">出处</span></summary>
+        <div class="src"><span lang="en"><code>.trellis/spec/cli/backend/platform-integration.md</code> (Subagent Context Injection classes 1–3; “Deliberately absent”; Inject Orientation, Not References); <code>.trellis/spec/cli/backend/workflow-state-contract.md</code>; <code>packages/cli/src/templates/shared-hooks/</code>; the <code>dsh</code> entry in <code>packages/cli/src/types/ai-tools.ts</code>.</span><span lang="zh"><code>.trellis/spec/cli/backend/platform-integration.md</code>（子智能体上下文注入第 1–3 类；“Deliberately absent”；Inject Orientation, Not References）；<code>.trellis/spec/cli/backend/workflow-state-contract.md</code>；<code>packages/cli/src/templates/shared-hooks/</code>；<code>packages/cli/src/types/ai-tools.ts</code> 中的 <code>dsh</code> 条目。</span></div>
+      </details>
+    </section>
+
+    <!-- ============ 6 REPO ============ -->
+    <section id="repo" data-layer="arch">
+      <div class="eyebrow"><span lang="en">Architecture · packages</span><span lang="zh">架构 · 包</span></div>
+      <h2 class="claim"><span lang="en">Two packages: core holds reusable domain logic, the CLI owns everything a terminal user touches</span><span lang="zh">两个包：core 放可复用的领域逻辑，CLI 负责终端用户接触到的一切</span></h2>
+      <p class="why"><span lang="en">Both versions are locked together. The CLI depends on core through <code>workspace:*</code>, so core must be built before you typecheck or test the CLI.</span><span lang="zh">两个包的版本号锁定一致。CLI 通过 <code>workspace:*</code> 依赖 core，所以对 CLI 做类型检查或测试之前，必须先构建 core。</span></p>
+      <figure>
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 0 880 340" role="img" aria-label="packages/cli owns commands and terminal UX, templates and configurators, migrations and update, release scripts. It imports packages/core only through public subpaths: root, channel, task, mem, testing. Deep imports into core's mem/internal are not allowed.">
+          <!-- cli -->
+          <rect class="box" x="20" y="16" width="400" height="308" rx="12"/>
+          <text x="40" y="44" class="t-c t-h" data-neutral>packages/cli</text>
+          <text x="40" y="64" class="t-s" data-neutral>@mindfoldhq/trellis · bins: trellis, tl</text>
+          <use href="#i-dev" class="ic-arch" x="40" y="84" width="22" height="22"/>
+          <text x="72" y="98"><tspan lang="en">Commands &amp; terminal UX</tspan><tspan lang="zh">命令与终端交互</tspan></text>
+          <text x="72" y="116" class="t-s"><tspan lang="en">argv, output, prompts, exit codes</tspan><tspan lang="zh">参数解析、输出、确认、退出码</tspan></text>
+          <use href="#i-template" class="ic-arch" x="40" y="130" width="22" height="22"/>
+          <text x="72" y="144"><tspan lang="en">Templates + configurators</tspan><tspan lang="zh">模板与 configurator</tspan></text>
+          <text x="72" y="162" class="t-s t-c" data-neutral>src/templates/ · src/configurators/</text>
+          <use href="#i-update" class="ic-arch" x="40" y="176" width="22" height="22"/>
+          <text x="72" y="190"><tspan lang="en">Migrations + update</tspan><tspan lang="zh">迁移与 update</tspan></text>
+          <text x="72" y="208" class="t-s t-c" data-neutral>src/migrations/manifests/*.json</text>
+          <use href="#i-repo" class="ic-arch" x="40" y="222" width="22" height="22"/>
+          <text x="72" y="236"><tspan lang="en">Release + CI scripts</tspan><tspan lang="zh">发布与 CI 脚本</tspan></text>
+          <text x="72" y="254" class="t-s"><tspan lang="en">publish only through GitHub Actions</tspan><tspan lang="zh">只通过 GitHub Actions 发布</tspan></text>
+          <text x="40" y="306" class="t-s"><tspan lang="en">depends on core via </tspan><tspan lang="zh">依赖 core：</tspan><tspan class="t-c">workspace:*</tspan></text>
+
+          <!-- core -->
+          <rect class="box" x="540" y="16" width="320" height="308" rx="12" style="stroke:var(--arch)"/>
+          <text x="556" y="44" class="t-c t-h" data-neutral>packages/core</text>
+          <text x="556" y="64" class="t-s" data-neutral>@mindfoldhq/trellis-core</text>
+          <rect class="box-arch" x="556" y="80" width="92" height="30" rx="6"/><text x="602" y="100" class="t-c" text-anchor="middle" data-neutral>.</text>
+          <rect class="box-arch" x="556" y="118" width="92" height="30" rx="6"/><text x="602" y="138" class="t-c" text-anchor="middle" data-neutral>/channel</text>
+          <rect class="box-arch" x="556" y="156" width="92" height="30" rx="6"/><text x="602" y="176" class="t-c" text-anchor="middle" data-neutral>/task</text>
+          <rect class="box-arch" x="556" y="194" width="92" height="30" rx="6"/><text x="602" y="214" class="t-c" text-anchor="middle" data-neutral>/mem</text>
+          <rect class="box-arch" x="556" y="232" width="92" height="30" rx="6"/><text x="602" y="252" class="t-c" text-anchor="middle" data-neutral>/testing</text>
+          <text x="660" y="100" class="t-s"><tspan lang="en">shared types, validation</tspan><tspan lang="zh">共享类型、校验</tspan></text>
+          <text x="660" y="138" class="t-s"><tspan lang="en">events, thread reducers</tspan><tspan lang="zh">事件、状态归约</tspan></text>
+          <text x="660" y="176" class="t-s"><tspan lang="en">task record helpers</tspan><tspan lang="zh">任务记录工具</tspan></text>
+          <text x="660" y="214" class="t-s"><tspan lang="en">session readers, search</tspan><tspan lang="zh">会话读取、检索</tspan></text>
+          <text x="660" y="252" class="t-s"><tspan lang="en">test helpers</tspan><tspan lang="zh">测试辅助</tspan></text>
+          <rect class="box-x" x="556" y="276" width="288" height="32" rx="6"/>
+          <text x="572" y="297" class="t-s"><tspan class="t-c">mem/internal/</tspan><tspan lang="en"> · private</tspan><tspan lang="zh"> · 私有</tspan></text>
+
+          <!-- arrows (drawn last so they sit on top of the core box edge) -->
+          <path class="e-acc" d="M420 171 H554"/>
+          <text x="480" y="162" class="t-s t-acc" text-anchor="middle"><tspan lang="en">public subpaths</tspan><tspan lang="zh">公开子路径</tspan></text>
+          <path class="e-warn" d="M420 292 H554"/>
+          <text x="480" y="284" class="t-s t-warn" text-anchor="middle"><tspan lang="en">✕ deep import</tspan><tspan lang="zh">✕ 深层导入</tspan></text>
+        </svg>
+        </div>
+        <figcaption><span lang="en">Rule of thumb: when logic in the CLI is needed somewhere else, move the reusable part into core and leave only rendering and option parsing in the CLI.</span><span lang="zh">经验法则：CLI 里的某段逻辑如果别处也要用，就把可复用的部分搬进 core，CLI 只保留渲染和参数解析。</span></figcaption>
+      </figure>
+      <details>
+        <summary><span lang="en">Sources</span><span lang="zh">出处</span></summary>
+        <div class="src"><span lang="en"><code>packages/core/package.json</code> exports; <code>.trellis/spec/cli/backend/trellis-core-sdk.md</code> “Package boundary”; <code>.trellis/spec/cli/backend/commands-mem.md</code> (no deep imports into <code>mem/internal</code>); CLAUDE.md “Project”.</span><span lang="zh"><code>packages/core/package.json</code> 的 exports；<code>.trellis/spec/cli/backend/trellis-core-sdk.md</code> “Package boundary”；<code>.trellis/spec/cli/backend/commands-mem.md</code>（禁止深层导入 <code>mem/internal</code>）；CLAUDE.md “Project”。</span></div>
+      </details>
+    </section>
+
+    <!-- ============ 7 DISTRIBUTE ============ -->
+    <section id="distribute" data-layer="arch">
+      <div class="eyebrow"><span lang="en">Architecture · distribution</span><span lang="zh">架构 · 分发</span></div>
+      <h2 class="claim"><span lang="en">Templates are the only source. Every <code>.claude/</code> or <code>.trellis/</code> at a repo root is generated output, including in this repo</span><span lang="zh">模板是唯一的源头。仓库根目录下的 <code>.claude/</code>、<code>.trellis/</code> 都是生成物，本仓库也不例外</span></h2>
+      <p class="why"><span lang="en">This is the trap new contributors fall into most often. Trellis is installed into itself, so the root folders look like source, but editing them changes nothing that ships.</span><span lang="zh">这是新贡献者最常踩的坑。Trellis 把自己安装进了自己的仓库，根目录这些文件夹看起来像源码，但改了它们，发布出去的东西一点都不会变。</span></p>
+      <figure>
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 0 880 330" role="img" aria-label="packages/cli/src/templates is read by PLATFORM_FUNCTIONS, which the AI_TOOLS registry drives, producing one file map per platform. trellis init and trellis update both use that map to write .trellis, the per-tool folders, AGENTS.md and .template-hashes.json into any repo, including this one. .trellis/scripts must stay byte-identical to templates/trellis/scripts.">
+          <!-- templates -->
+          <rect class="box" x="20" y="16" width="270" height="270" rx="12" style="stroke:var(--accent)"/>
+          <use href="#i-template" class="ic-acc" x="34" y="28" width="24" height="24"/>
+          <text x="66" y="46" class="t-c t-h" data-neutral>src/templates/</text>
+          <text x="34" y="70" class="t-s t-acc"><tspan lang="en">the only source: edit here</tspan><tspan lang="zh">唯一的源头：改这里</tspan></text>
+          <text x="40" y="98" class="t-c" data-neutral>‹tool›/</text>
+          <text x="40" y="114" class="t-s"><tspan lang="en">hooks, agents, settings per tool</tspan><tspan lang="zh">各工具的 hook、agent、设置</tspan></text>
+          <text x="40" y="138" class="t-c" data-neutral>common/</text>
+          <text x="40" y="154" class="t-s"><tspan lang="en">commands + skills, {{placeholders}}</tspan><tspan lang="zh">命令与 skill，含 {{占位符}}</tspan></text>
+          <text x="40" y="178" class="t-c" data-neutral>shared-hooks/</text>
+          <text x="40" y="194" class="t-s"><tspan lang="en">4 Python hooks shared by tools</tspan><tspan lang="zh">4 个跨工具共享的 Python hook</tspan></text>
+          <text x="40" y="218" class="t-c" data-neutral>trellis/</text>
+          <text x="40" y="234" class="t-s" data-neutral>scripts/, workflow.md, config.yaml</text>
+          <text x="40" y="258" class="t-c" data-neutral>markdown/</text>
+          <text x="40" y="274" class="t-s"><tspan lang="en">spec skeletons, AGENTS.md</tspan><tspan lang="zh">规范骨架、AGENTS.md</tspan></text>
+
+          <!-- registry & functions -->
+          <rect class="box-arch" x="330" y="16" width="220" height="56" rx="8"/>
+          <text x="346" y="40" class="t-c t-h" data-neutral>AI_TOOLS</text>
+          <text x="346" y="60" class="t-s"><tspan class="t-c">types/ai-tools.ts</tspan><tspan lang="en"> · 22 entries</tspan><tspan lang="zh"> · 22 项</tspan></text>
+          <path class="e" d="M440 72 V114"/>
+          <text x="448" y="98" class="t-s"><tspan lang="en">drives</tspan><tspan lang="zh">驱动</tspan></text>
+          <rect class="box-arch" x="330" y="116" width="220" height="56" rx="8"/>
+          <text x="346" y="140" class="t-c t-h" data-neutral>PLATFORM_FUNCTIONS</text>
+          <text x="346" y="160" class="t-s"><tspan lang="en">one file map per platform</tspan><tspan lang="zh">每个平台一张文件表</tspan></text>
+          <path class="e" d="M290 144 H328"/>
+          <text x="309" y="136" class="t-s" text-anchor="middle"><tspan lang="en">read</tspan><tspan lang="zh">读取</tspan></text>
+          <path class="e" d="M440 172 V214"/>
+          <rect class="box-arch" x="330" y="216" width="220" height="56" rx="8"/>
+          <text x="346" y="240" class="t-c t-h" data-neutral>trellis init · update</text>
+          <text x="346" y="260" class="t-s"><tspan lang="en">same map, two commands</tspan><tspan lang="zh">同一张表，两个命令</tspan></text>
+          <path class="e" d="M550 244 H588"/>
+          <text x="569" y="236" class="t-s" text-anchor="middle"><tspan lang="en">write</tspan><tspan lang="zh">写入</tspan></text>
+
+          <!-- repo -->
+          <rect class="box-sunk" x="590" y="16" width="270" height="270" rx="12"/>
+          <use href="#i-repo" class="ic" x="604" y="28" width="24" height="24"/>
+          <text x="636" y="46" class="t-h"><tspan lang="en">Any repo</tspan><tspan lang="zh">任意仓库</tspan></text>
+          <text x="604" y="70" class="t-s t-warn"><tspan lang="en">this one too: output, don't edit</tspan><tspan lang="zh">本仓库也是：生成物，别手改</tspan></text>
+          <text x="610" y="98" class="t-c" data-neutral>.trellis/</text>
+          <text x="610" y="114" class="t-s"><tspan lang="en">scripts, workflow, spec, tasks</tspan><tspan lang="zh">脚本、工作流、规范、任务</tspan></text>
+          <text x="610" y="148" class="t-c" data-neutral>.claude/ .cursor/ .codex/ …</text>
+          <text x="610" y="164" class="t-s"><tspan lang="en">hooks, agents, skills</tspan><tspan lang="zh">hook、agent、skill</tspan></text>
+          <text x="610" y="198" class="t-c" data-neutral>AGENTS.md</text>
+          <text x="610" y="214" class="t-s"><tspan lang="en">only the TRELLIS block is managed</tspan><tspan lang="zh">只托管 TRELLIS 标记块</tspan></text>
+          <text x="610" y="248" class="t-c" data-neutral>.template-hashes.json</text>
+          <text x="610" y="264" class="t-s"><tspan lang="en">hash of every installed file</tspan><tspan lang="zh">每个已安装文件的哈希</tspan></text>
+
+          <!-- twin -->
+          <path class="e-twin" d="M150 288 V304 H725 V290"/>
+          <text x="437" y="324" class="t-s t-arch" text-anchor="middle"><tspan lang="en">byte-identical: </tspan><tspan lang="zh">字节一致：</tspan><tspan class="t-c">templates/trellis/scripts ⇄ .trellis/scripts</tspan></text>
+        </svg>
+        </div>
+        <figcaption><span lang="en">One file map per platform feeds both <code>init</code> and <code>update</code>, so a new template file reaches new installs and existing ones the same way.</span><span lang="zh">每个平台一张文件表，<code>init</code> 和 <code>update</code> 共用。新加的模板文件，无论新安装还是已有安装，都走同一条路径。</span></figcaption>
+      </figure>
+      <div class="rules">
+        <div class="rule do"><svg aria-hidden="true"><use href="#i-template"/></svg><div><span lang="en">Change shipped behavior in <code>packages/cli/src/templates/</code>, then run <code>trellis update</code> to refresh this repo's own copy.</span><span lang="zh">要改发布出去的行为，就改 <code>packages/cli/src/templates/</code>，再运行 <code>trellis update</code> 刷新本仓库自己的那份副本。</span></div></div>
+        <div class="rule dont"><svg aria-hidden="true"><use href="#i-warn"/></svg><div><span lang="en">Don't hand-edit root <code>.claude/</code>, <code>.cursor/</code>, <code>.trellis/</code> (except this repo's own <code>spec/</code> and tasks), <code>packages/cli/dist/</code> or <code>.trellis/.backup-*</code>.</span><span lang="zh">不要手改根目录的 <code>.claude/</code>、<code>.cursor/</code>、<code>.trellis/</code>（本仓库自己的 <code>spec/</code> 和任务除外），也不要手改 <code>packages/cli/dist/</code> 或 <code>.trellis/.backup-*</code>。</span></div></div>
+        <div class="rule twin"><svg aria-hidden="true"><use href="#i-update"/></svg><div><span lang="en">Editing a <code>.trellis/scripts/**/*.py</code>? Make the same edit in the template twin. <code>test/regression.test.ts</code> fails if they differ by a single byte.</span><span lang="zh">要改 <code>.trellis/scripts/**/*.py</code>？模板里的那份也要做同样的修改。两者只要差一个字节，<code>test/regression.test.ts</code> 就会失败。</span></div></div>
+      </div>
+      <details>
+        <summary><span lang="en">Sources</span><span lang="zh">出处</span></summary>
+        <div class="src"><span lang="en">CLAUDE.md “Shipped templates vs. this repo's own install” and “Platform registry”; <code>ls packages/cli/src/templates/</code>; <code>.trellis/spec/cli/backend/commands-update.md</code> (AGENTS.md managed block).</span><span lang="zh">CLAUDE.md “Shipped templates vs. this repo's own install” 与 “Platform registry”；<code>ls packages/cli/src/templates/</code>；<code>.trellis/spec/cli/backend/commands-update.md</code>（AGENTS.md 托管块）。</span></div>
+      </details>
+    </section>
+
+    <!-- ============ 8 UPDATE ============ -->
+    <section id="update" data-layer="arch">
+      <div class="eyebrow"><span lang="en">Architecture · update</span><span lang="zh">架构 · 更新</span></div>
+      <h2 class="claim"><span lang="en"><code>trellis update</code> upgrades every file you never touched and protects every file you edited</span><span lang="zh"><code>trellis update</code> 会升级你没动过的每个文件，并保护你改过的每个文件</span></h2>
+      <p class="why"><span lang="en">The hash file records exactly what Trellis installed. If a file still matches it, the file is safe to replace. If not, it's yours.</span><span lang="zh">哈希文件准确记录了 Trellis 安装时写入的内容。文件与记录一致，就可以放心替换；不一致，就说明是你改过的。</span></p>
+      <figure>
+        <p class="scroll-hint"><span lang="en">Scroll sideways to see the whole diagram →</span><span lang="zh">左右滑动查看完整图示 →</span></p>
+        <div class="fig-scroll">
+        <svg class="d" viewBox="0 0 880 240" role="img" aria-label="trellis update first applies migration manifests for each version crossed (rename, rename-dir, delete, safe-file-delete). Then for each template file it compares the file hash with the recorded hash: if equal, the file is replaced and the new hash recorded; if different, your edit is kept and you are asked, the file is skipped, or a .new file is written.">
+          <rect class="box" x="20" y="90" width="150" height="64" rx="10"/>
+          <text x="36" y="116" class="t-c t-h" data-neutral>trellis update</text>
+          <text x="36" y="140" class="t-s"><tspan lang="en">old → new version</tspan><tspan lang="zh">旧版本 → 新版本</tspan></text>
+          <path class="e" d="M170 122 H206"/>
+
+          <rect class="box-arch" x="208" y="60" width="230" height="124" rx="10"/>
+          <use href="#i-update" class="ic-arch" x="222" y="74" width="22" height="22"/>
+          <text x="254" y="91" class="t-h"><tspan lang="en">Run migrations</tspan><tspan lang="zh">执行迁移</tspan></text>
+          <text x="222" y="118" class="t-c" data-neutral>manifests/&lt;version&gt;.json</text>
+          <text x="222" y="138" class="t-s t-c" data-neutral>rename · rename-dir</text>
+          <text x="222" y="156" class="t-s t-c" data-neutral>delete · safe-file-delete</text>
+          <text x="222" y="175" class="t-s"><tspan lang="en">data only, no code changes</tspan><tspan lang="zh">纯数据，无需改代码</tspan></text>
+          <path class="e" d="M438 122 H478"/>
+
+          <polygon class="box" points="480,122 560,72 640,122 560,172"/>
+          <text x="560" y="118" text-anchor="middle"><tspan lang="en">hash matches</tspan><tspan lang="zh">哈希等于</tspan></text>
+          <text x="560" y="136" text-anchor="middle"><tspan lang="en">the record?</tspan><tspan lang="zh">记录值？</tspan></text>
+
+          <path class="e-acc" d="M560 72 V50 H676"/>
+          <text x="572" y="42" class="t-s t-acc"><tspan lang="en">yes: untouched</tspan><tspan lang="zh">是：没改过</tspan></text>
+          <rect class="box-acc" x="678" y="20" width="182" height="60" rx="10"/>
+          <text x="694" y="45" class="t-h"><tspan lang="en">Replace file</tspan><tspan lang="zh">替换为新模板</tspan></text>
+          <text x="694" y="65" class="t-s"><tspan lang="en">record the new hash</tspan><tspan lang="zh">记录新的哈希</tspan></text>
+
+          <path class="e-warn" d="M560 172 V196 H676"/>
+          <text x="572" y="214" class="t-s t-warn"><tspan lang="en">no: you edited it</tspan><tspan lang="zh">否：你改过</tspan></text>
+          <rect class="box-warn" x="678" y="166" width="182" height="60" rx="10"/>
+          <text x="694" y="191" class="t-h"><tspan lang="en">Keep your edit</tspan><tspan lang="zh">保留你的修改</tspan></text>
+          <text x="694" y="211" class="t-s"><tspan lang="en">ask · skip · write .new</tspan><tspan lang="zh">询问 · 跳过 · 写 .new</tspan></text>
+        </svg>
+        </div>
+        <figcaption><span lang="en">Every release adds a manifest (<code>/trellis:create-manifest</code>). There are 149 today. Re-running <code>update</code> on a clean repo writes nothing.</span><span lang="zh">每次发版都要加一个 manifest（<code>/trellis:create-manifest</code>），目前共有 149 个。在干净的仓库上重复运行 <code>update</code>，不会写入任何东西。</span></figcaption>
+      </figure>
+      <details>
+        <summary><span lang="en">Three files follow special rules</span><span lang="zh">三个文件有特殊规则</span></summary>
+        <div>
+          <ul>
+            <li><code>AGENTS.md</code> · <span lang="en">only the region between <code>&lt;!-- TRELLIS:START --&gt;</code> and <code>&lt;!-- TRELLIS:END --&gt;</code> is merged. Your text outside it is left alone.</span><span lang="zh">只合并 <code>&lt;!-- TRELLIS:START --&gt;</code> 与 <code>&lt;!-- TRELLIS:END --&gt;</code> 之间的区域，区域外你写的内容不会被动。</span></li>
+            <li><code>.trellis/workflow.md</code> · <span lang="en">updated as one whole file, never block by block, because scripts parse its phase and platform sections.</span><span lang="zh">只能整文件更新，不能按块更新，因为脚本会解析其中的阶段和平台段落。</span></li>
+            <li><code>.template-hashes.json</code> · <span lang="en">written atomically (temp file, then rename), so a crash can't make every file look user-modified.</span><span lang="zh">原子写入（先写临时文件，再重命名），程序崩溃也不会让所有文件都被误判为用户改过。</span></li>
+          </ul>
+          <p class="src"><span lang="en">Sources: <code>.trellis/spec/cli/backend/commands-update.md</code>, <code>.trellis/spec/cli/backend/migrations.md</code>, <code>ls packages/cli/src/migrations/manifests | wc -l</code>.</span><span lang="zh">出处：<code>.trellis/spec/cli/backend/commands-update.md</code>、<code>.trellis/spec/cli/backend/migrations.md</code>、<code>ls packages/cli/src/migrations/manifests | wc -l</code>。</span></p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ 9 CHEAT SHEET ============ -->
+    <section id="cheatsheet" data-layer="ref">
+      <div class="eyebrow"><span lang="en">Reference</span><span lang="zh">速查</span></div>
+      <h2 class="claim"><span lang="en">Where do I make this change?</span><span lang="zh">这个改动该改哪里？</span></h2>
+      <p class="why"><span lang="en">Before editing an area, read the spec that governs it. The Pre-Development Checklist in <code>.trellis/spec/cli/backend/index.md</code> maps each area to its spec.</span><span lang="zh">动某块代码之前，先读管它的那份规范。<code>.trellis/spec/cli/backend/index.md</code> 里的 Pre-Development Checklist 列出了每块代码对应的规范。</span></p>
+      <div class="cheat">
+        <div class="row"><svg aria-hidden="true"><use href="#i-template"/></svg>
+          <div class="q"><span lang="en">Change what ships to users</span><span lang="zh">修改发给用户的内容</span></div>
+          <div class="a"><code>packages/cli/src/templates/</code></div>
+          <div class="s"><span lang="en">not the root folders</span><span lang="zh">不是根目录那些文件夹</span></div></div>
+        <div class="row"><svg aria-hidden="true"><use href="#i-platform"/></svg>
+          <div class="q"><span lang="en">Add an AI tool</span><span lang="zh">新增一种 AI 工具</span></div>
+          <div class="a"><code>AI_TOOLS</code> + <code>PLATFORM_FUNCTIONS</code> + <span lang="en">CLI flag</span><span lang="zh">CLI 参数</span></div>
+          <div class="s"><code>platform-integration.md</code></div></div>
+        <div class="row"><svg aria-hidden="true"><use href="#i-hook"/></svg>
+          <div class="q"><span lang="en">Change the per-turn breadcrumb</span><span lang="zh">修改每轮提示</span></div>
+          <div class="a"><code>[workflow-state:*]</code> <span lang="en">in</span><span lang="zh">位于</span> <code>workflow.md</code></div>
+          <div class="s"><code>workflow-state-contract.md</code></div></div>
+        <div class="row"><svg aria-hidden="true"><use href="#i-update"/></svg>
+          <div class="q"><span lang="en">Ship a release</span><span lang="zh">发版</span></div>
+          <div class="a"><span lang="en">add a manifest in</span><span lang="zh">在此处加 manifest：</span> <code>src/migrations/manifests/</code><span lang="en">; publish through CI only</span><span lang="zh">；只通过 CI 发布</span></div>
+          <div class="s"><code>release-process.md</code>, <code>migrations.md</code></div></div>
+        <div class="row"><svg aria-hidden="true"><use href="#i-repo"/></svg>
+          <div class="q"><span lang="en">Reuse logic outside the CLI</span><span lang="zh">在 CLI 之外复用逻辑</span></div>
+          <div class="a"><code>packages/core</code><span lang="en">, exposed through a public subpath</span><span lang="zh">，通过公开子路径暴露</span></div>
+          <div class="s"><code>trellis-core-sdk.md</code></div></div>
+        <div class="row"><svg aria-hidden="true"><use href="#i-search"/></svg>
+          <div class="q"><span lang="en">Find the rules for an area</span><span lang="zh">找某块代码的规则</span></div>
+          <div class="a"><code>.trellis/spec/cli/backend/index.md</code></div>
+          <div class="s"><span lang="en">Pre-Development Checklist</span><span lang="zh">Pre-Development Checklist（开发前检查清单）</span></div></div>
+        <div class="row"><svg aria-hidden="true"><use href="#i-task"/></svg>
+          <div class="q"><span lang="en">Check locally the way CI does</span><span lang="zh">在本地按 CI 的顺序检查</span></div>
+          <div class="a"><span data-neutral>py_compile (3.9) → typecheck → lint:py → lint → build → test</span></div>
+          <div class="s"><span lang="en">build before test: integration tests run </span><span lang="zh">先构建再测试：集成测试会运行 </span><code>bin/trellis.js</code></div></div>
+      </div>
+    </section>
+
+    <footer>
+      <span lang="en">Snapshot of Trellis v0.6.17 (October 2026). Every claim here comes from README.md, <code>.trellis/workflow.md</code>, CLAUDE.md or <code>.trellis/spec/cli/backend/</code>. Check those first if something looks out of date.</span><span lang="zh">本页反映 Trellis v0.6.17（2026 年 10 月）的状态。所有内容都取自 README.md、<code>.trellis/workflow.md</code>、CLAUDE.md 或 <code>.trellis/spec/cli/backend/</code>。如果发现有过时的地方，请先查这些文件。</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  // language: saved choice, else browser language, else English
+  var TITLES = { en: "Trellis Contributor Map", zh: "Trellis 贡献者地图" };
+  function setLang(l) {
+    root.setAttribute("data-lang", l);
+    root.lang = l === "zh" ? "zh-Hans" : "en";
+    document.title = TITLES[l];
+  }
+  var nav = (navigator.language || "").toLowerCase();
+  setLang(load("trellis-map-lang") || (nav.indexOf("zh") === 0 ? "zh" : "en"));
+  document.getElementById("lang-btn").addEventListener("click", function () {
+    var next = root.getAttribute("data-lang") === "zh" ? "en" : "zh";
+    setLang(next); save("trellis-map-lang", next);
+  });
+
+  // theme: auto -> light -> dark
+  var tbtn = document.getElementById("theme-btn");
+  function setTheme(m) {
+    tbtn.setAttribute("data-mode", m);
+    if (m === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", m);
+  }
+  var savedTheme = load("trellis-map-theme");
+  if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
+  tbtn.addEventListener("click", function () {
+    var order = ["auto", "light", "dark"];
+    var next = order[(order.indexOf(tbtn.getAttribute("data-mode")) + 1) % 3];
+    setTheme(next); save("trellis-map-theme", next);
+  });
+
+  // "you are here": highlight the nav link of the section in view
+  var links = {};
+  Array.prototype.forEach.call(document.querySelectorAll(".rail a"), function (a) { links[a.getAttribute("href").slice(1)] = a; });
+  var rail = document.querySelector(".rail");
+  function mark(id) {
+    Object.keys(links).forEach(function (k) { links[k].classList.toggle("on", k === id); });
+    var a = links[id];
+    if (a && rail.scrollWidth > rail.clientWidth) {
+      var left = a.offsetLeft - rail.clientWidth / 2 + a.offsetWidth / 2;
+      rail.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+    }
+  }
+  // the current section is the last one whose top has passed 40% of the viewport (the first one above that)
+  var sections = Object.keys(links).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+  var current = null, ticking = false;
+  function update() {
+    ticking = false;
+    var line = window.innerHeight * 0.4, id = sections[0].id;
+    sections.forEach(function (s) { if (s.getBoundingClientRect().top <= line) id = s.id; });
+    if (id !== current) { current = id; mark(id); }
+  }
+  window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+
+  // problem -> mechanism map: focus a node to trace its edges
+  var fig = document.getElementById("mapfig");
+  var edges = fig.querySelectorAll(".mp-edge");
+  var nodes = fig.querySelectorAll(".mp-node");
+  function focusKey(k) {
+    fig.classList.add("dim");
+    var on = {}; on[k] = true;
+    Array.prototype.forEach.call(edges, function (e) {
+      var hit = e.getAttribute("data-p") === k || e.getAttribute("data-m") === k;
+      e.classList.toggle("on", hit);
+      if (hit) { on[e.getAttribute("data-p")] = true; on[e.getAttribute("data-m")] = true; }
+    });
+    Array.prototype.forEach.call(nodes, function (n) { n.classList.toggle("on", !!on[n.getAttribute("data-k")]); });
+  }
+  function clear() { fig.classList.remove("dim"); }
+  Array.prototype.forEach.call(nodes, function (n) {
+    var k = n.getAttribute("data-k");
+    n.addEventListener("pointerenter", function () { focusKey(k); });
+    n.addEventListener("pointerleave", clear);
+    n.addEventListener("focus", function () { focusKey(k); });
+    n.addEventListener("blur", clear);
+  });
+})();
+</script>

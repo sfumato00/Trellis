@@ -28,6 +28,32 @@ load the right guidance.
   Trellis package-scoped specs. Do not add it to `.trellis/config.yaml` unless
   it gains package-level implementation ownership or specs.
 
+## Non-Package Docs: `docs/explainer/`
+
+`docs/explainer/index.html` is a self-contained, bilingual (en/zh) diagram page
+that explains to new contributors what problem Trellis solves and how the repo is
+built. It is not part of any package, build, test, or npm tarball.
+
+- It restates facts that live elsewhere: the `AI_TOOLS` count (22), the sub-agent
+  context classes in `cli/backend/platform-integration.md` (9 / 7 / 2, plus 3
+  command-only and 1 skills-first), the `@mindfoldhq/trellis-core` subpath
+  exports, the migration manifest count, and the template → configurator →
+  repo pipeline. When one of those changes, update the page and its footer
+  version line.
+- Both languages sit side by side as `[lang="en"]` / `[lang="zh"]` sibling
+  pairs (SVG labels use `<tspan>` pairs); CSS shows one. Language-neutral text
+  is marked `data-neutral` or lives in `<code>`.
+- Icons come only from the `<symbol>` sprite at the top of the file.
+- It follows the Artifact page contract (no `<!doctype>`/`<html>`/`<body>`),
+  so opening the file directly renders in quirks mode; the published copy
+  renders in standards mode. Both were checked.
+- Check after editing (fails on external resources, duplicate ids, missing
+  icons, unpaired or untranslated text):
+
+```bash
+node docs/explainer/verify.mjs docs/explainer/index.html
+```
+
 ## Contracts
 
 - `.trellis/config.yaml` uses stable Trellis package keys (`cli`, `core`,
