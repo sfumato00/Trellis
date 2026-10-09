@@ -34,7 +34,7 @@ Collected 2026-10-08 against `main` @ f089cb32.
 | B12 | `trellis ablate` / `restore` — reversible removal for with/without comparison | README.md § FAQ |
 | B13 | Lightweight tasks may be PRD-only; complex tasks need `design.md` + `implement.md` before `task.py start` | .trellis/workflow.md § Planning Artifacts |
 | B14 | Step details load on demand: `get_context.py --mode phase --step <X.Y>` | .trellis/workflow.md § Context Script; platform-integration.md § Inject Orientation |
-| B15 | Sub-agent context read order: jsonl entries → `prd.md` → `design.md` → `implement.md` (shown on the page as "PRD + plan + specs") | SessionStart `<guidelines>` / workflow.md |
+| B15 | Sub-agent context read order: jsonl entries → `prd.md` → `design.md` → `implement.md` (shown on the page as "PRD + plan + specs") | .trellis/workflow.md step 2.1 ("Injects `prd.md`, `design.md` if present, and `implement.md` if present") |
 
 ## C. Platforms (22 in registry)
 
